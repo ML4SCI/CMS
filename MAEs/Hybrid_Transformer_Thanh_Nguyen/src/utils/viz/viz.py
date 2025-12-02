@@ -6,6 +6,16 @@ import seaborn as sns
 from sklearn.metrics import confusion_matrix, roc_curve, roc_auc_score
 
 
+__all__ = [
+    'plot_feature_distribution',
+    'plot_particle_reconstruction',
+    'plot_history',
+    'plot_ssl_history',
+    'plot_confusion_matrix',
+    'plot_roc_curve'
+]
+
+
 # Function to visualize the distribution of particle features (pT, eta, phi, E)
 def plot_feature_distribution(X_jets: np.ndarray) -> None:
     feature_names = ['pT', 'eta', 'phi', 'energy']
