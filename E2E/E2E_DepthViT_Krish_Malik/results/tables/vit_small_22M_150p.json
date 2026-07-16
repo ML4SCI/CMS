@@ -1,0 +1,20 @@
+{
+  "model": "vit_small",
+  "tier": "22M",
+  "config": "configs/jets_150p_vit_small_90epoch.json",
+  "n_params": 22012613,
+  "flops": 4311300000,
+  "flops_method": "calflops",
+  "top1_acc": 74.14,
+  "macro_auc": 0.9326,
+  "per_class_auc": {
+    "g": 0.9305,
+    "q": 0.9152,
+    "W": 0.9394,
+    "Z": 0.9264,
+    "top": 0.9515
+  },
+  "split": "150p",
+  "epochs": 90,
+  "seed": 42
+}
