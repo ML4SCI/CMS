@@ -1,0 +1,13 @@
+{
+  "model": "vit_tiny_shrunk",
+  "tier": "165K",
+  "config": "configs/jets_vit_tiny_165k_150p.json",
+  "n_params": 162373,
+  "flops": 31600000,
+  "flops_method": "calflops",
+  "top1_acc": 71.70,
+  "macro_auc": 0.9238,
+  "split": "150p",
+  "epochs": 90,
+  "seed": 42
+}

@@ -1,0 +1,20 @@
+{
+  "model": "depthvit",
+  "tier": "5.4M",
+  "config": "configs/jets_150p_5M_90epoch.json",
+  "n_params": 5389691,
+  "flops": 1039000000,
+  "flops_method": "calflops",
+  "top1_acc": 74.99,
+  "macro_auc": 0.9361,
+  "per_class_auc": {
+    "g": 0.9318,
+    "q": 0.9181,
+    "W": 0.9446,
+    "Z": 0.9311,
+    "top": 0.9547
+  },
+  "split": "150p",
+  "epochs": 90,
+  "seed": 42
+}

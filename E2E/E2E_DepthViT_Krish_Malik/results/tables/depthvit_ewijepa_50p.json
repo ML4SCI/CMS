@@ -1,0 +1,17 @@
+{
+  "model": "depthvit",
+  "ckpt": "/pscratch/sd/k/krish_m/depthvit/runs/jets_50p_ijepa_ew/checkpoints/cls_finetune_ew/epoch=epoch=58-step=step=69148-val_acc1=val_acc1=62.4842.ckpt",
+  "config": "configs/jets_50p_ijepa_ew.json",
+  "n_params": 164417,
+  "flops": 2150400,
+  "flops_method": "manual_approx",
+  "top1_acc": 62.51085069444444,
+  "macro_auc": 0.8823803478143271,
+  "per_class_auc": {
+    "g": 0.8831644287116509,
+    "q": 0.8824317446021619,
+    "W": 0.8718348438219585,
+    "Z": 0.8466154449584945,
+    "top": 0.9278552769773694
+  }
+}
