@@ -1,0 +1,49 @@
+# ---------------------------------------------------------------------------
+# .gitignore for multiscale_sr/
+# Commit: source code + the curated reports/ folder.
+# Never commit: run artifacts, W&B logs, checkpoints, secrets, caches.
+# ---------------------------------------------------------------------------
+
+# Secrets
+.env
+.env.*
+
+# Python caches / bytecode
+__pycache__/
+*.py[cod]
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+
+# Per-run training outputs (checkpoints, per-run figures, metrics, samples).
+# These are large and reproducible — keep them out of git.
+experiments/
+
+# Weights & Biases run logs (also live under experiments/<run>/wandb/).
+wandb/
+
+# Model checkpoints / weights anywhere in the tree.
+*.pt
+*.pth
+*.ckpt
+
+# Raw data — never commit datasets.
+*.parquet
+*.hdf5
+*.h5
+*.npz
+
+# ---------------------------------------------------------------------------
+# Explicitly KEEP the curated evaluation report (small PNGs + markdown).
+# Negation rules so nothing above accidentally strips it.
+# ---------------------------------------------------------------------------
+!reports/
+!reports/**
+evaluations/
+*.log
