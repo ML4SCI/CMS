@@ -16,9 +16,9 @@
 
 The high-resolution (HR) calorimeter image is the fixed ground truth. A low-resolution
 (LR) input is produced by **area-downsampling** HR to a target scale (64, 32, 16). A
-**bicubic-residual generator** upsamples the LR back to HR size with plain bicubic
-interpolation and then adds a *learned residual correction* — so the network only learns
-the hard part (sharpening), never the easy part (upscaling). A **conditional
+**progressive-residual generator** upsamples the LR back to HR size through a stack of
+*learned* 2× sub-pixel convolution stages — one per power of two the scale factor spans —
+and adds a bicubic-upsampled copy of the LR as a global residual skip. A **conditional
 spectral-norm PatchGAN discriminator** judges whether an HR image is a plausible
 super-resolution *of its specific LR* by consuming the `(LR, HR)` pair. Training combines
 an LSGAN adversarial loss, a heavy L1 reconstruction loss, and a direct
@@ -27,71 +27,95 @@ size is a forward-time argument, so one checkpoint serves every scale.
 
 ---
 
-## 1. The central idea — bicubic-residual generation
+## 1. The central idea — progressive learned upsampling + a residual skip
 
-The single most important design choice (`generator.py:55-57`):
+The single most important design choice (`generator.py:113-135`):
 
 ```python
 def forward(self, lr, target_size):
-    lr_up = F.interpolate(lr, size=target_size, mode="bicubic", align_corners=False)
-    return lr_up + self.net(lr_up)          # bicubic baseline + learned residual
+    n_stages = ceil(log2(target_h / in_h))     # inferred per call
+    x = self.stem(lr)
+    for stage in self.up_stages[:n_stages]:    # learned 2x each
+        x = stage(x)
+    x = self.body(x)
+    out = self.to_image(x)
+    if self.lr_skip:
+        out = out + F.interpolate(lr, target_size, mode="bicubic")
+    return out
 ```
 
-The generator **does not learn to upsample**. It bicubic-upsamples first, then the CNN
-learns only a **residual correction**:
+The generator **learns to upsample**, in stages:
 
 ```
-    SR = bicubic(LR) + CNN(bicubic(LR))
+    SR = PixelShuffleStages(LR) + bicubic(LR)
 ```
 
 **Why this design:**
-- **Capacity goes to the hard part.** Bicubic handles basic upscaling for free; the CNN
-  spends all its parameters sharpening edges and fixing the deposits bicubic blurs.
-- **It can never be much worse than the baseline.** If the residual → 0, the output is
-  exactly bicubic. The GAN's job is *literally* "improve on bicubic" — and that is the
-  same bicubic that serves as the evaluation floor (see `README.md` tagging section). The
-  architecture bakes the baseline in as a skip connection.
-- **Resolution-agnostic.** `target_size` is passed at forward time, not baked into the
-  weights. The same checkpoint upsamples 64→125, 32→125, or 16→125 — exactly what the
-  multi-scale study needs (identical architecture across LR scales, only input resolution
-  changes).
+- **Upsampling is learned, not imposed.** Each stage is a sub-pixel convolution
+  (`Conv 64→256 → PixelShuffle(2) → ReLU → ResidualBlock`), so the network picks its own
+  upsampling kernel instead of inheriting bicubic's smoothing prior.
+- **Structure is built gradually.** Doubling one step at a time avoids committing to a
+  blurred full-resolution canvas before any learned layer runs.
+- **The bicubic floor is still baked in.** With `lr_skip` on (default), if the learned
+  branch → 0 the output is exactly bicubic — the same bicubic that serves as the
+  evaluation floor. Disable with `--no-lr-skip`.
+- **Resolution-agnostic.** `target_size` is a forward-time argument and the stage count is
+  inferred from it, so one checkpoint serves every scale: 16× runs 3 stages, 32× runs 2,
+  64× runs 1.
 
-This is closer to **EDSR / VDSR** (residual SR) than to the original SRGAN, which used a
-learned PixelShuffle upsampler.
+**This replaced an earlier single-shot bicubic-residual design** (`SR = bicubic(LR) +
+CNN(bicubic(LR))`, closer to EDSR/VDSR). Bicubic pre-blurring destroyed sparse peaks
+before the residual head could act on them: 16×/32× posted near-zero or negative
+`val_psnr_norm` against 64×'s ~9. The staged sub-pixel upsampler is closer to the original
+SRGAN in that respect.
 
-**Diagram instruction:** draw LR entering a "bicubic upsample" box (dashed, = not
-learned), the result branching into (a) a long skip arrow and (b) the CNN body; the CNN
-output and the skip meet at a `+` node producing SR. Label the skip "bicubic baseline
-(the floor)" and the CNN "learned residual correction."
+**Diagram instruction:** draw LR entering a "stem" box, then a chain of three
+"PixelShuffle ×2" stages (annotate which scales use how many), then the body and head.
+Draw a separate long curved skip from the raw LR through a dashed "bicubic upsample" box
+(dashed = not learned) meeting the head output at a `+` node producing SR. Label the skip
+"bicubic baseline (the floor), optional".
 
 ---
 
-## 2. Generator structure (`Generator`, `generator.py:29-57`)
+## 2. Generator structure (`Generator`, `generator.py:55-135`)
 
 Config used in runs: `gen_channels=64` (`base_channels`), `gen_blocks=8` (`num_blocks`).
 
 ```
-LR (3, s, s)
-   │  bicubic upsample → (3, 125, 125)              [lr_up — the residual skip]
+LR (3, s, s)                                         s ∈ {16, 32, 64}
+   │                                                 ├─ skip: bicubic → (3, 128, 128)
    ▼
-Conv 7×7  (3 → 64)  + ReLU                           [head: large receptive field]
+Conv 7×7  (3 → 64)  + ReLU                           [stem: large receptive field]
    ▼
-8 × ResidualBlock(64)                                [body]
+n × PixelShuffleUpBlock(64)                          [learned 2× each; n = 3/2/1]
+   │   Conv 3×3 (64 → 256) → PixelShuffle(2)
+   │   → ReLU → ResidualBlock(64)
+   ▼                                                 → (64, 128, 128)
+8 × ResidualBlock(64)                                [body, at full resolution]
    ▼
 Conv 3×3  (64 → 64) + InstanceNorm + ReLU            [neck]
    ▼
-Conv 7×7  (64 → 3)                                   [tail → residual map]
+Conv 7×7  (64 → 3)                                   [tail]
    ▼
-+ lr_up                                              [add bicubic skip]
++ lr_up                                              [add bicubic skip, if lr_skip]
    ▼
-SR (3, 125, 125)
+SR (3, 128, 128)
 ```
 
-Approx. 1.5M parameters — a compact generator. The **7×7 convs** at head and tail (vs
+Stage count per scale — HR is zero-padded 125→128 upstream (`multiscale.pad_to_size`), so
+every path lands on an exact power of two and the trailing resize is a no-op:
+
+| LR | Upscale | Stages | Path |
+|---:|---:|---:|---|
+| 16×16 | 8× | 3 | 16 → 32 → 64 → 128 |
+| 32×32 | 4× | 2 | 32 → 64 → 128 |
+| 64×64 | 2× | 1 | 64 → 128 |
+
+Approx. **1.31M parameters** — a compact generator. The **7×7 convs** at stem and tail (vs
 SRGAN's 9×9 / 3×3) give a large receptive field at input and output to capture the spatial
 extent of jet deposits.
 
-### 2.1 Residual block (`ResidualBlock`, `generator.py:7-26`)
+### 2.1 Residual block (`ResidualBlock`, `generator.py:12-31`)
 
 ```python
 def forward(self, x):
@@ -200,7 +224,7 @@ A subtlety that is easy to get wrong (and which this code gets right):
 | Operation | Direction | Interpolation mode | Where | Why |
 |---|---|---|---|---|
 | **Make LR** (HR → LR input) | shrink | **`area`** | `data/multiscale.py:34` | Area (average) pooling preserves the per-cell mean and **cannot go negative** — bicubic's negative lobes would create unphysical negative energy around sparse deposits. |
-| **Baseline / display / D input** (LR → HR) | grow | **`bicubic`** | `engine.py:140`, `generator.py:56`, `discriminator.py:37` | Bicubic-up is the field-standard "do-nothing" floor; there is no `area` upsampling mode. |
+| **Baseline / display / D input** (LR → HR) | grow | **`bicubic`** | `engine.py:140`, `generator.py:133`, `discriminator.py:37` | Bicubic-up is the field-standard "do-nothing" floor; there is no `area` upsampling mode. |
 
 So **"LR (bicubic)" in the tagging eval = area-downsampled HR, then bicubic-upsampled to
 HR size.** It is the floor against which both the GAN and (later) the INR are measured.
@@ -238,8 +262,9 @@ is the whole point of Option A: a controlled study of "quality vs input granular
 
 | Component | Class / function | File:line |
 |---|---|---|
-| Bicubic-residual generator | `Generator.forward` | `generator.py:55` |
-| Residual block (InstanceNorm, ×0.1) | `ResidualBlock` | `generator.py:7` |
+| Progressive-residual generator | `Generator.forward` | `generator.py:113` |
+| Learned 2× sub-pixel upsample | `PixelShuffleUpBlock` | `generator.py:34` |
+| Residual block (InstanceNorm, ×0.1) | `ResidualBlock` | `generator.py:12` |
 | Conditional PatchGAN + spectral norm | `Discriminator` | `discriminator.py:9` |
 | LSGAN discriminator loss | `discriminator_loss` | `engine.py:29` |
 | LSGAN generator adversarial loss | `generator_adv_loss` | `engine.py:34` |
@@ -257,7 +282,7 @@ Every deviation from textbook SRGAN, and why:
 
 | Deviation | Motivation | Category |
 |---|---|---|
-| Bicubic-residual (don't learn upscaling) | spend capacity on sharpening; never worse than baseline; resolution-agnostic | architecture |
+| Progressive learned upsampling + bicubic skip | staged 2× sub-pixel stages preserve sparse peaks that single-shot bicubic pre-blurred away; skip keeps the baseline as a floor; resolution-agnostic | architecture |
 | InstanceNorm (not BatchNorm) | sparse images + small batches break BatchNorm | sparsity |
 | ×0.1 residual scaling | stable early gradients (EDSR) | stability |
 | Conditional discriminator (LR+HR) | SR must match *its* LR, not just look real | architecture |

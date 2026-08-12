@@ -79,7 +79,11 @@ Full write-up: [`TRAINING_STABILITY.md`](TRAINING_STABILITY.md) · measured abla
 
 The high-resolution image is the fixed ground truth; the low-resolution input is produced by **area-downsampling** HR to the target scale. A separate model is trained per scale.
 
-**Bicubic-residual generator.** The LR input is upsampled with plain bicubic interpolation, and the network learns only an additive *residual correction*. It never has to learn the easy part (upscaling) — only the hard part (sharpening). The architecture is resolution-agnostic: output size is a forward-time argument.
+**Progressive-residual generator.** Upsampling is *learned*, not interpolated: the LR input passes through a stack of 2× sub-pixel convolution stages (`Conv → PixelShuffle(2) → ReLU → ResidualBlock`), one stage per power of two between input and target size, followed by 8 residual blocks at full resolution. A bicubic-upsampled copy of the LR input is added to the output as a global residual skip (`lr_skip`, on by default, disable with `--no-lr-skip`), so the head learns a correction on top of the low-frequency prior.
+
+The architecture is resolution-agnostic: `forward(lr, target_size)` infers the stage count per call, so **one checkpoint serves every scale** — 16× runs 3 stages, 32× runs 2, 64× runs 1.
+
+An earlier design bicubic-upsampled straight to HR and learned a single residual on top. On sparse deposits that pre-blurred the peaks before any learned layer ran, and the residual head could not recover them: 16×/32× posted near-zero or negative `val_psnr_norm` against 64×'s ~9. Staged learned upsampling replaced it — see the docstring in [`multiscale_sr/models/generator.py`](multiscale_sr/models/generator.py).
 
 **Conditional spectral-norm PatchGAN discriminator.** It consumes the `(LR, HR)` pair, so it judges whether an image is a plausible super-resolution *of its specific input*, not merely a plausible calorimeter image.
 
@@ -171,7 +175,7 @@ Step 3 prints the tagging efficiency and writes all nine figures to `experiments
 multiscale_sr/
 ├── multiscale_sr/                # the package
 │   ├── models/
-│   │   ├── generator.py          # bicubic-residual generator
+│   │   ├── generator.py          # progressive-residual generator (sub-pixel upsampling)
 │   │   └── discriminator.py      # conditional spectral-norm PatchGAN
 │   ├── data/
 │   │   ├── parquet_dataset.py    # CMS jet parquet loader
