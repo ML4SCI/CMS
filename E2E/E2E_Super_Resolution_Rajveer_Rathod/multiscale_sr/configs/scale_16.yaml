@@ -1,0 +1,26 @@
+# LR 16x16 -> HR 125x125 zero-padded to 128x128 (power-of-two target for clean
+# 2x upsampling stages). Coarsest scale; expect the largest fidelity drop.
+scale: 16
+hr_size: 128
+use_native_lr: false
+gen_channels: 64
+gen_blocks: 8
+lambda_l1: 10.0
+lambda_physics: 10.0
+lambda_adv: 1.0
+l1_weighting: energy
+l1_weight_alpha: 5.0
+lr: 2.0e-4
+d_lr_ratio: 0.5
+real_label: 0.9
+# Adversarial stabilization (prevents the D-wins / dim-collapse failure).
+adv_warmup_epochs: 3
+adv_ramp_epochs: 5
+g_steps_per_d: 2
+d_loss_floor: 0.02   # 16x settles at d~0.04; 0.02 keeps D active instead of frozen
+d_input_noise: 0.05
+batch_size: 64
+epochs: 40
+val_ratio: 0.33
+seed: 42
+wandb_project: multiscale-sr
