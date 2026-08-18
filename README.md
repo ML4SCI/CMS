@@ -43,3 +43,12 @@ Masked autoencoder pretraining has been shown to improve reconstruction and clas
 | :------------ | ------ | ---: |
 | Particle Masking Autoencoder | Eric Reinhardt | 2023 |
 | Hybrid ParT and L-GATr Transformers | Thanh "James" Nguyen | 2025 |
+
+
+## 🐳 Docker Setup (Reproducible Environment)
+
+This project provides a Docker setup to ensure a consistent and reproducible environment.
+
+### Build the Docker image
+```bash
+docker build -t cms-ml4sci .
