@@ -1,0 +1,102 @@
+{
+  "_comment": "DepthViT ~5M on Imagewoof, BUCKETED variable resolution. k_factor=62 -> 5551220 params, +0.02% vs ViT-384 (5550154), DepthViT the smaller model. pos_embed_2d=True is REQUIRED: 1D indexing scrambles vertical adjacency across buckets. No crop, no forced square \u2014 each image resized to its nearest-aspect bucket. Native area retained ~100% vs ViT-384's ~55.8%.",
+  "seed": 1234,
+  "data": {
+    "root": "/pscratch/sd/k/krish_m/imagewoof/imagewoof2",
+    "n_channels": 3,
+    "num_classes": 10,
+    "global_batch_size": 256,
+    "num_workers": 8,
+    "pin_memory": true,
+    "persistent_workers": true,
+    "rand_augment": null,
+    "label_smoothing": 0.0,
+    "dataset_size": 9025,
+    "format": "imagewoof_bucket",
+    "suite": [
+      [
+        480,
+        320
+      ],
+      [
+        448,
+        336
+      ],
+      [
+        384,
+        384
+      ],
+      [
+        336,
+        448
+      ],
+      [
+        320,
+        480
+      ]
+    ]
+  },
+  "model": {
+    "channel_treatment": "asym",
+    "patch_size": 16,
+    "k_factor": 62,
+    "n_layers": 12,
+    "mlp_dim": 768,
+    "linear_rank": 16,
+    "dropout": 0.0,
+    "max_image_height": 480,
+    "max_image_width": 480,
+    "num_hap_layers": 4,
+    "hap_window_size": 4,
+    "hap_mlp_ratio": 4.0,
+    "hap_drop_path": 0.0,
+    "hap_alpha": 0.1,
+    "hap_learnable_alpha": false,
+    "grad_checkpointing": false,
+    "k_chunk_size": 0,
+    "compile_blocks": false,
+    "compile": false,
+    "pos_embed_2d": true
+  },
+  "trainer": {
+    "precision": "bf16-mixed",
+    "accumulate_grad_batches": 1,
+    "grad_clip_norm": 1.0,
+    "devices": 4,
+    "strategy": "ddp_find_unused_parameters_true",
+    "use_distributed_sampler": false,
+    "log_every_n_steps": 10,
+    "val_check_interval": 1.0,
+    "default_root_dir": "/pscratch/sd/k/krish_m/depthvit/runs/imagewoof_dvit_5M_seed1234"
+  },
+  "checkpointing": {
+    "dir": "/pscratch/sd/k/krish_m/depthvit/runs/imagewoof_dvit_5M_seed1234/checkpoints/{phase}",
+    "monitor": "val_acc1",
+    "mode": "max",
+    "save_top_k": 1,
+    "every_n_epochs": 1
+  },
+  "phases": [
+    {
+      "name": "cls_finetune",
+      "type": "cls_finetune",
+      "epochs": 90,
+      "optim": {
+        "optimizer": "sgd",
+        "lr": 0.1,
+        "weight_decay": 0.0001,
+        "momentum": 0.9
+      },
+      "sched": {
+        "sched": "cosine",
+        "warmup_steps": 140,
+        "min_lr": 1e-06,
+        "epochs": 90
+      }
+    }
+  ],
+  "resume": {
+    "start_phase": 0,
+    "path": "auto"
+  }
+}

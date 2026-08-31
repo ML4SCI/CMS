@@ -1,0 +1,74 @@
+{
+  "_comment": "Matched-size ResNet9 CNN baseline on HLS4ML LHC jets 150p — closes Gap 01. Same 90-epoch protocol as DepthViT (SGD lr=0.1, cosine, warmup 5000, bs 512). 164,671 params vs DepthViT 164,417. From scratch, no pretraining.",
+  "seed": 42,
+  "data": {
+    "format": "lhc_jets",
+    "train_dir": "/pscratch/sd/k/krish_m/datasets/lhc_jets/150p/train",
+    "val_dir": "/pscratch/sd/k/krish_m/datasets/lhc_jets/150p/val",
+    "n_channels": 2,
+    "num_classes": 5,
+    "global_batch_size": 512,
+    "num_workers": 4,
+    "pin_memory": true,
+    "persistent_workers": true,
+    "pad_to_multiple": 0,
+    "hflip_prob": 0.5,
+    "_comment_stats": "Per-channel mean/std AFTER log1p normalization",
+    "channel_stats": {
+      "ecal_mean": 1.923e-05,
+      "ecal_std": 0.00844423,
+      "hcal_mean": 0.00672488,
+      "hcal_std": 0.14590938
+    },
+    "label_smoothing": 0.0,
+    "dataset_size": 620000
+  },
+  "model": {
+    "_comment": "ResNet-9 topology. widths last-stage (78) dominates param count. 164,671 params, matches DepthViT 164,417 (+254). torch.compile is safe here (static graph).",
+    "arch": "resnet9",
+    "widths": [14, 24, 44, 78],
+    "sync_bn": false,
+    "compile": true,
+    "compile_mode": "default"
+  },
+  "trainer": {
+    "precision": "bf16-mixed",
+    "accumulate_grad_batches": 4,
+    "grad_clip_norm": 1.0,
+    "devices": 4,
+    "strategy": "ddp",
+    "log_every_n_steps": 20,
+    "val_check_interval": 1.0,
+    "default_root_dir": "/pscratch/sd/k/krish_m/depthvit/runs/jets_150p_resnet9"
+  },
+  "checkpointing": {
+    "dir": "/pscratch/sd/k/krish_m/depthvit/runs/jets_150p_resnet9/checkpoints/{phase}",
+    "monitor": "val_acc1",
+    "mode": "max",
+    "save_top_k": 1,
+    "every_n_epochs": 1
+  },
+  "phases": [
+    {
+      "name": "cls_finetune",
+      "type": "cls_finetune",
+      "epochs": 90,
+      "optim": {
+        "optimizer": "sgd",
+        "lr": 0.1,
+        "weight_decay": 0.0001,
+        "momentum": 0.9
+      },
+      "sched": {
+        "sched": "cosine",
+        "warmup_steps": 5000,
+        "min_lr": 1e-06,
+        "epochs": 90
+      }
+    }
+  ],
+  "resume": {
+    "start_phase": 0,
+    "path": "auto"
+  }
+}

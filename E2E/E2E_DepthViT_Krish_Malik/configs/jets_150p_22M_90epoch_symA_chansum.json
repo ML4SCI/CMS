@@ -1,0 +1,87 @@
+{
+  "_comment": "DepthViT-22M tier-4 symmetric control, arm symA_chansum. HELD FIXED vs configs/jets_150p_22M_90epoch.json: HAP block count/placement/window, slot-aware TokenAttnHead (linear_rank=16), depth (L=18), k_factor=196, mlp_dim=768, optimizer/schedule/epochs/batch/precision, seed. CHANGED: model.channel_treatment only.",
+  "seed": 42,
+  "data": {
+    "format": "lhc_jets",
+    "train_dir": "/pscratch/sd/k/krish_m/datasets/lhc_jets/150p/train",
+    "val_dir": "/pscratch/sd/k/krish_m/datasets/lhc_jets/150p/val",
+    "n_channels": 2,
+    "num_classes": 5,
+    "global_batch_size": 512,
+    "num_workers": 4,
+    "pin_memory": true,
+    "persistent_workers": true,
+    "pad_to_multiple": 0,
+    "hflip_prob": 0.5,
+    "channel_stats": {
+      "ecal_mean": 1.923e-05,
+      "ecal_std": 0.00844423,
+      "hcal_mean": 0.00672488,
+      "hcal_std": 0.14590938
+    },
+    "label_smoothing": 0.0,
+    "dataset_size": 620000
+  },
+  "model": {
+    "_comment": "SYMMETRIC CONTROL ARM A -- channel-summing patch embedding. Identical to the locked tier-4 DepthViT-22M config in every respect except that conv_proj is rebuilt with groups=1 instead of groups=in_channels, so every one of the 2*k stem features sees BOTH ECAL and HCAL. The 2-way axis CrossDepthMultiheadSelfAttention attends over survives, but it no longer carries physical per-detector identity. Isolates: does the gain depend on the channel axis being the PHYSICAL detector split? Budget cost is +39,200 params and +7.8 MFLOPs (~0.18% on both) -- verify exactly with count_params_symctrl.py before submitting.",
+    "channel_treatment": "chansum",
+    "patch_size": 10,
+    "k_factor": 196,
+    "n_layers": 18,
+    "mlp_dim": 768,
+    "linear_rank": 16,
+    "dropout": 0.0,
+    "max_image_height": 100,
+    "max_image_width": 100,
+    "num_hap_layers": 4,
+    "hap_window_size": 5,
+    "hap_mlp_ratio": 4.0,
+    "hap_drop_path": 0.0,
+    "hap_alpha": 0.1,
+    "hap_learnable_alpha": false,
+    "grad_checkpointing": false,
+    "k_chunk_size": 0,
+    "compile_blocks": true,
+    "compile": false
+  },
+  "trainer": {
+    "precision": "bf16-mixed",
+    "accumulate_grad_batches": 4,
+    "grad_clip_norm": 1.0,
+    "devices": 4,
+    "strategy": "ddp_find_unused_parameters_true",
+    "log_every_n_steps": 20,
+    "val_check_interval": 1.0,
+    "default_root_dir": "/pscratch/sd/k/krish_m/depthvit/runs/jets_150p_22M_90epoch_symA_chansum"
+  },
+  "checkpointing": {
+    "dir": "/pscratch/sd/k/krish_m/depthvit/runs/jets_150p_22M_90epoch_symA_chansum/checkpoints/{phase}",
+    "monitor": "val_acc1",
+    "mode": "max",
+    "save_top_k": 1,
+    "every_n_epochs": 1
+  },
+  "phases": [
+    {
+      "name": "cls_finetune",
+      "type": "cls_finetune",
+      "epochs": 90,
+      "optim": {
+        "optimizer": "sgd",
+        "lr": 0.1,
+        "weight_decay": 0.0001,
+        "momentum": 0.9
+      },
+      "sched": {
+        "sched": "cosine",
+        "warmup_steps": 5000,
+        "min_lr": 1e-06,
+        "epochs": 90
+      }
+    }
+  ],
+  "resume": {
+    "start_phase": 0,
+    "path": "auto"
+  }
+}
