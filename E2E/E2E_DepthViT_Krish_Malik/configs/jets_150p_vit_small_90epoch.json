@@ -1,0 +1,79 @@
+{
+  "_comment": "ViT-Small (standard 384/12/6, patch=10) on HLS4ML LHC jets 150p — cold-start baseline for the 22M tier. 21,412,613 params (verified by building the module). Same tokenization (patch=10 -> 10x10 grid) as DepthViT and the ViT-Tiny baseline, so the ONLY difference vs DepthViT at this tier is the attention mechanism + HAP. Training recipe (SGD lr=0.1, wd=1e-4, momentum=0.9, cosine, 5000 warmup steps, bf16, batch 512 x4 accum) is held IDENTICAL to the DepthViT-22M and 5M runs so accuracy differences are attributable to architecture, not schedule. NOTE ON MATCHING: standard ViT-Small is 21.41M; the current DepthViT-22M config is 22.05M (k=196), a +2.96% gap. See RUN_GUIDE for the matching decision (either drop DepthViT to k=192 -> 21.38M, or nudge this ViT-Small to 390/12/6 -> 22.08M). This file is the textbook-standard baseline; do not change 384/6 unless you deliberately pick the tune-ViT path.",
+  "seed": 42,
+  "data": {
+    "format": "lhc_jets",
+    "train_dir": "/pscratch/sd/k/krish_m/datasets/lhc_jets/150p/train",
+    "val_dir": "/pscratch/sd/k/krish_m/datasets/lhc_jets/150p/val",
+    "n_channels": 2,
+    "num_classes": 5,
+    "global_batch_size": 512,
+    "num_workers": 4,
+    "pin_memory": true,
+    "persistent_workers": true,
+    "pad_to_multiple": 0,
+    "hflip_prob": 0.5,
+    "_comment_stats": "Per-channel mean/std AFTER log1p normalization",
+    "channel_stats": {
+      "ecal_mean": 1.923e-05,
+      "ecal_std": 0.00844423,
+      "hcal_mean": 0.00672488,
+      "hcal_std": 0.14590938
+    },
+    "label_smoothing": 0.0,
+    "dataset_size": 620000
+  },
+  "model": {
+    "_comment": "Standard ViT-Small. img=100, patch=10 -> 10x10=100 patches (+1 cls token). embed_dim=384, num_layers=12, num_heads=6 (384/6=64 head_dim), mlp_ratio=4 -> mlp hidden 1536. 21,412,613 params.",
+    "img_size": 100,
+    "patch_size": 10,
+    "embed_dim": 384,
+    "num_layers": 12,
+    "num_heads": 6,
+    "mlp_ratio": 4.0,
+    "dropout": 0.0,
+    "attn_dropout": 0.0,
+    "compile": true,
+    "compile_mode": "default"
+  },
+  "trainer": {
+    "precision": "bf16-mixed",
+    "accumulate_grad_batches": 4,
+    "grad_clip_norm": 1.0,
+    "devices": 4,
+    "strategy": "ddp",
+    "log_every_n_steps": 20,
+    "val_check_interval": 1.0,
+    "default_root_dir": "/pscratch/sd/k/krish_m/depthvit/runs/jets_150p_vit_small_90epoch"
+  },
+  "checkpointing": {
+    "dir": "/pscratch/sd/k/krish_m/depthvit/runs/jets_150p_vit_small_90epoch/checkpoints/{phase}",
+    "monitor": "val_acc1",
+    "mode": "max",
+    "save_top_k": 1,
+    "every_n_epochs": 1
+  },
+  "phases": [
+    {
+      "name": "cls_finetune",
+      "type": "cls_finetune",
+      "epochs": 90,
+      "optim": {
+        "optimizer": "sgd",
+        "lr": 0.1,
+        "weight_decay": 0.0001,
+        "momentum": 0.9
+      },
+      "sched": {
+        "sched": "cosine",
+        "warmup_steps": 5000,
+        "min_lr": 1e-06,
+        "epochs": 90
+      }
+    }
+  ],
+  "resume": {
+    "start_phase": 0,
+    "path": "auto"
+  }
+}

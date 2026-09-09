@@ -1,0 +1,52 @@
+{
+  "meta": {
+    "gpu": "NVIDIA A100-SXM4-40GB",
+    "torch": "2.6.0",
+    "C": 2,
+    "K": 196,
+    "D": 392,
+    "L": 100,
+    "B": 32,
+    "n_layers": 18,
+    "n_hap": 4,
+    "compile": true
+  },
+  "components": [
+    {
+      "component": "chan-attn",
+      "blocks": 18,
+      "fwd_ms_per_block": 1.9956480264663696,
+      "fwd_bwd_ms_per_block": 6.82044792175293,
+      "fwd_ms_total": 35.92166447639465,
+      "fwd_bwd_ms_total": 122.76806259155273,
+      "fwd_gflops_total": 35.5848192,
+      "time_pct": 85.13085453483491,
+      "flop_pct": 26.008813364393305,
+      "ratio": 3.2731541167264906
+    },
+    {
+      "component": "FFN/MLP",
+      "blocks": 18,
+      "fwd_ms_per_block": 0.23030400276184082,
+      "fwd_bwd_ms_per_block": 0.8347520232200623,
+      "fwd_ms_total": 4.145472049713135,
+      "fwd_bwd_ms_total": 15.02553641796112,
+      "fwd_gflops_total": 69.3633024,
+      "time_pct": 10.419132859992903,
+      "flop_pct": 50.697382395568674,
+      "ratio": 0.2055161897452049
+    },
+    {
+      "component": "HAP",
+      "blocks": 4,
+      "fwd_ms_per_block": 0.39446398615837097,
+      "fwd_bwd_ms_per_block": 1.6043519973754883,
+      "fwd_ms_total": 1.5778559446334839,
+      "fwd_bwd_ms_total": 6.417407989501953,
+      "fwd_gflops_total": 31.870189568,
+      "time_pct": 4.450012605172191,
+      "flop_pct": 23.29380424003803,
+      "ratio": 0.19103846496328783
+    }
+  ]
+}

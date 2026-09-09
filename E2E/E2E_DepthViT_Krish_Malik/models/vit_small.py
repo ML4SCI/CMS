@@ -25,9 +25,9 @@ import torch
 import torch.nn as nn
 
 
-# --------------------------------------------------------------------- #
-#  Building blocks                                                       #
-# --------------------------------------------------------------------- #
+                                                                         
+                                                                          
+                                                                         
 
 class PatchEmbed(nn.Module):
     """Conv2d-based patch embedding. Input (B, C, H, W) -> (B, N, D)."""
@@ -49,8 +49,8 @@ class PatchEmbed(nn.Module):
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = self.proj(x)                  # (B, D, grid, grid)
-        x = x.flatten(2).transpose(1, 2)  # (B, N, D)
+        x = self.proj(x)                                      
+        x = x.flatten(2).transpose(1, 2)             
         return x
 
 
@@ -77,9 +77,9 @@ class Attention(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         B, N, D = x.shape
         qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, self.head_dim)
-        qkv = qkv.permute(2, 0, 3, 1, 4)        # (3, B, H, N, d)
+        qkv = qkv.permute(2, 0, 3, 1, 4)                         
         q, k, v = qkv.unbind(0)
-        # Prefer fused SDPA when available (PyTorch >= 2.0)
+                                                           
         if hasattr(torch.nn.functional, "scaled_dot_product_attention"):
             x = torch.nn.functional.scaled_dot_product_attention(
                 q, k, v,
@@ -131,9 +131,9 @@ class Block(nn.Module):
         return x
 
 
-# --------------------------------------------------------------------- #
-#  Model                                                                 #
-# --------------------------------------------------------------------- #
+                                                                         
+                                                                          
+                                                                         
 
 class ViTSmall(nn.Module):
     """Vanilla ViT-Small classifier.
@@ -198,9 +198,9 @@ class ViTSmall(nn.Module):
 
     def forward_features(self, x: torch.Tensor) -> torch.Tensor:
         B = x.shape[0]
-        x = self.patch_embed(x)                      # (B, N, D)
-        cls = self.cls_token.expand(B, -1, -1)       # (B, 1, D)
-        x = torch.cat([cls, x], dim=1)               # (B, N+1, D)
+        x = self.patch_embed(x)                                 
+        cls = self.cls_token.expand(B, -1, -1)                  
+        x = torch.cat([cls, x], dim=1)                            
         x = x + self.pos_embed
         x = self.pos_drop(x)
         for blk in self.blocks:
@@ -210,16 +210,16 @@ class ViTSmall(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.forward_features(x)
-        return self.head(x[:, 0])                    # CLS token
+        return self.head(x[:, 0])                               
 
     @torch.no_grad()
     def param_count(self) -> int:
         return sum(p.numel() for p in self.parameters() if p.requires_grad)
 
 
-# --------------------------------------------------------------------- #
-#  Quick self-test                                                       #
-# --------------------------------------------------------------------- #
+                                                                         
+                                                                          
+                                                                         
 
 if __name__ == "__main__":
     m = ViTSmall()
