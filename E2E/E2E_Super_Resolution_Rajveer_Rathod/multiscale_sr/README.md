@@ -34,11 +34,41 @@ A longer **32× run at 60 epochs** does better still — val_L1 0.0741, peak_rat
 
 **Reconstruction quality improves monotonically with input resolution**, and the physics metric follows it: at 64× (a 2× upscale) SR recovers 78.5% of the taggability lost to downsampling; at 16× (an 8× upscale) it recovers none of it.
 
+> **Read the table above with the seed sweep below.** Every row is a single training seed. Repeating the 64× configuration across four seeds produces tagging efficiencies from 76.4% to 97.9%, so the 93.9% in this table is one draw from a wide distribution, not a stable property of the configuration. The per-scale *ordering* is reproducible; the individual numbers are not.
+
+### Seed variance — the 64× result is a distribution, not a number
+
+Four runs of the **identical** 64× configuration, 40 epochs, differing only in the training `seed`. The evaluation seed is pinned to 0, so the HR and LR baselines are byte-identical in all four (AUC_HR = 0.6981, AUC_LR = 0.5183) and every difference below is the generator's random initialization.
+
+| Seed | AUC_SR | Efficiency (SR/HR) | LR→HR gap recovered | per-sample r | Energy corr. r |
+|-----:|-------:|-------------------:|--------------------:|-------------:|---------------:|
+| 123 | 0.6834 | **97.9%** | +91.8% | 0.699 | 0.9945 |
+| 456 | 0.5337 | **76.4%** | +8.6% | 0.149 | **0.9977** |
+| 789 | 0.6262 | 89.7% | +60.0% | 0.642 | 0.9962 |
+| 999 | 0.5961 | 85.4% | +43.3% | 0.470 | 0.9972 |
+| **mean ± sd** | 0.610 ± 0.062 | **87.4% ± 8.9pp** | +50.9% ± 34.7pp | 0.490 ± 0.248 | 0.9964 ± 0.0014 |
+
+Three things follow, and they are the main result of this sweep.
+
+**1. Seed choice moves the headline metric by 21 percentage points.** Seed 123 recovers 92% of the LR→HR gap; seed 456 recovers 9%. Reporting either alone would be defensible-looking and misleading. The 93.9% single-seed figure quoted in the table above sits near the top of this range.
+
+**2. The physics metrics cannot see the difference, and point the wrong way.** Across these four seeds, energy correlation varies by 0.14% while tagging efficiency varies by 10.2% — the task metric moves **70× more** than the metric we would use to judge the model. Worse, the correlation is *negative*: Spearman rho = **−1.00** between energy correlation and tagging efficiency, and −1.00 for pT–energy correlation. The seed with the **best** energy fidelity (456, r = 0.9977) is the **worst** tagger (76.4%); the seed with the worst energy fidelity (123, r = 0.9945) is the best (97.9%).
+
+> With n = 4 the smallest attainable permutation p-value is 0.083, so a perfect rank correlation here is **suggestive, not significant**. What makes it worth acting on is that all four energy-based metrics agree on direction, not the p-value.
+
+**3. The information survives; the frozen tagger just cannot read it.** Train a tagger directly on each source instead of reusing the HR one, and SR scores **0.7101 ± 0.0067** — above HR's own 0.6912, in all four seeds, with **11× less** spread than the frozen-tagger number (CV 0.94% vs 10.22%). So seed 456 has not destroyed the jet information. It has encoded it somewhere a tagger calibrated on real HR images does not look. That is **distribution shift, not information loss** — a far more tractable problem, and it is what makes tagger fine-tuning the highest-value next experiment.
+
+What this costs in practice: at its optimal threshold, seed 456 misses **429 of 602 signal events** (F1 0.386, *worse* than bicubic's 0.517) while conserving energy to 0.2% and passing every physics check in the section below.
+
+Reports: [`semd_correlation_64x.md`](https://drive.google.com/file/d/1dwPxwrG-Jj3hvEnZY9PjNw3h4yVQSVBr/view) · raw per-seed JSON in the [multiseed Drive folder](https://drive.google.com/drive/folders/1w-bOYIotaADkpFJdcadI_hTf9LMmRf9k).
+
 **The 16× case is the important negative result.** Its 72.9% efficiency looks respectable in isolation, but the *recovery fraction is strongly negative* — SR output is **less** HR-taggable than a plain bicubic upsample, despite clean images, a sharp core, and energy conserved to ~1%. The generator produces detail that carries no usable jet-class information.
 
 This is a failure mode **PSNR and SSIM cannot see**, and it is the reason the evaluation pipeline in this repo exists.
 
-**Nuance:** taggers trained *independently on each source* reach AUC ≈ 0.69–0.73 on 16×/32× SR images — at 16×, SR is *more* taggable on its own (0.728) than HR is (0.670). The class information is present; it is simply presented in a form incompatible with a tagger trained on real HR. This is **distribution mismatch**, not information loss, which points at a concrete follow-up (train or domain-adapt the tagger on SR).
+**Nuance:** taggers trained *independently on each source* reach AUC ≈ 0.69–0.73 on 16×/32× SR images — SR is *more* taggable on its own than HR is. The class information is present; it is simply presented in a form incompatible with a tagger trained on real HR. This is **distribution mismatch**, not information loss, which points at a concrete follow-up (train or domain-adapt the tagger on SR).
+
+> These 16×/32× per-source figures come from the older single-seed evaluation and its superseded tagger baseline, so they are directional only — treat the seed-sweep numbers above (64×: SR 0.7101 ± 0.0067 vs HR 0.6912) as the measured version of this effect. Both scales are still single-seed; see open thread 3.
 
 ### Physics conservation — a clean win at every scale
 
@@ -114,6 +144,7 @@ Five entrypoints. Run them in this order.
 | 3 | `classification_eval.py` | **The headline metric.** Trains a jet tagger, measures tagging efficiency, writes the full 9-figure diagnostic suite. | a checkpoint, parquet |
 | 4 | `tag_efficiency.py` | Lightweight sibling of #3 — ROC + AUC bar only, when you just want the number. | a checkpoint, parquet |
 | 5 | `run_evaluations.py` | Batch-runs #3 over *every* checkpoint under `experiments/`, then writes a cross-run comparison table. | `--data-dir` |
+| 6 | `semd_correlation.py` | Post-hoc: correlates every physics metric against tagging efficiency across seeds. Reads #3's JSON, runs nothing. | an `evaluations/<date>/` dir |
 
 Supporting modules (not run directly): `engine.py` holds the losses and metrics, `experiment.py` manages run directories, `tagger.py` is the jet tagger used by #3, `data/` handles both dataset formats, `utils/env.py` resolves the device automatically.
 
@@ -278,6 +309,28 @@ python run_evaluations.py --data-dir ../datasets
 
 Evaluates all runs under `experiments/` with one fixed HR tagger and a common seed, then writes a dated cross-run comparison to `evaluations/<date>/` — master table, per-scale best checkpoint, epoch-effect trend, and an AUC_HR consistency sanity check.
 
+### Correlate physics metrics against tagging efficiency
+
+```bash
+# --allow-missing-semd is REQUIRED here: this snapshot of classification_eval.py
+# predates SEMD and writes no results["semd"] block, so the script's default
+# (--require-semd) filters out every run and exits with a misleading
+# "no classification_eval.json found" — the files exist, they were all skipped.
+# Drop the flag only once SEMD is ported into classification_eval.py.
+#
+# --scale is deliberate too: correlating across scales conflates "which scale"
+# with "which seed". Pick one.
+#
+# Point --eval-dir at a SINGLE dated directory. Mixing dates mixes code
+# vintages, and one run missing the physics_correlation block blanks that
+# metric's row for the whole table.
+python semd_correlation.py \
+    --eval-dir evaluations/2026-07-07 --scale 64 --allow-missing-semd \
+    --out reports/semd_correlation.md --out-json reports/semd_correlation.json
+```
+
+Until SEMD lands, the `SEMD(SR,HR)` and `SEMD recovery` rows always read `absent from results JSON` and the verdict is always `inconclusive` — expected, not a failure. What is useful today is the legacy-metric audit: the physics rows and the contamination-guard banners.
+
 ## Metrics
 
 | Metric | Meaning |
@@ -295,6 +348,8 @@ Evaluates all runs under `experiments/` with one fixed HR tagger and a common se
 
 The numbers in the headline table come from a fixed HR-trained tagger at seed 42, 4032 samples (2822 train / 1210 test), tagger width 32, 15 epochs, on the parquet dataset. AUC_HR = 0.669 across every run, which is the sanity check that the comparison is fair.
 
+The **seed-sweep table** is a later, stricter set: the same 4032 samples, but with the evaluation seed pinned to 0 and one tagger checkpoint reused across all four runs, giving AUC_HR = 0.6981 and AUC_LR = 0.5183 identically in every row. The two tables therefore have different baselines and should not be compared row-to-row — only within themselves.
+
 ```bash
 # Train the best configuration (64x, stabilized):
 python train.py --config configs/scale_64.yaml --data-dir ../datasets \
@@ -304,6 +359,13 @@ python train.py --config configs/scale_64.yaml --data-dir ../datasets \
 python classification_eval.py \
     --checkpoint experiments/<run>/checkpoints/best.pt \
     --data-dir ../datasets
+
+# Reproduce one row of the seed sweep (repeat for 123 / 456 / 789 / 999).
+# --seed changes the generator init; the eval seed stays pinned so the
+# HR/LR baselines are identical across seeds and only the generator moves.
+python train.py --config configs/scale_64.yaml --data-dir ../datasets \
+    --d-loss-floor 0.05 --epochs 40 --seed 456 \
+    --run-name colab_64x_full_40_seed_456
 ```
 
 Per-scale `d_loss_floor`: **0.02** at 16×, **0.05** at 32× and 64×. See [`TRAINING_STABILITY.md`](TRAINING_STABILITY.md) for why it differs.
@@ -312,11 +374,14 @@ Training checkpoints and per-run artifacts are gitignored (they are large and re
 
 ## Status and next steps
 
-The 64× result is complete and defensible: 93.9% tagging efficiency, 78.5% of the LR→HR gap recovered, per-sample agreement r = 0.64, and the flattest residual of any scale. The mode-collapse failure is diagnosed, fixed, and the fix is measured.
+The 64× configuration is the strongest of the three scales and the mode-collapse failure is diagnosed, fixed, and measured. But the seed sweep changed what can be claimed about it: **64× tagging efficiency is 87.4% ± 8.9pp across four seeds (76.4%–97.9%)**, so the single-seed 93.9% is a favourable draw rather than a settled result. The reproducible findings are the per-scale ordering, the physics conservation, and the metric-blindness result itself.
 
 Open threads, in priority order:
 
-1. **16× still fails on the physics axis** despite clean images and conserved energy. The per-source diagnostic (AUC ≈ 0.72–0.76 on SR alone) says the class information is there but HR-incompatible. Training or domain-adapting the downstream tagger on SR images tests that hypothesis directly and is the highest-value next experiment.
-2. **32× has not converged.** Going 40 → 60 epochs moved peak_ratio 0.822 → 0.873 and val_L1 0.0757 → 0.0741, still improving (both tagger-independent). A longer budget is the cheapest remaining gain.
-3. **Audit `psnr_norm` in `engine.py`** — see the note under Metrics.
-4. Progressive and stabilized training variants at 128-padded resolution are in progress.
+1. **Fine-tune the frozen tagger on SR images.** This is now the highest-value experiment, and the seed sweep sharpened it: per-source taggers reach 0.7101 ± 0.0067 on 64× SR (vs 0.6912 on HR) in *every* seed, including the 76.4% one. That means the failure is distribution shift, not lost information. If a short fine-tune on a small SR sample lifts the weak seeds toward 0.71, the diagnosis is confirmed and there is a concrete recipe. The same hypothesis explains the 16× failure (per-source AUC ≈ 0.72–0.76 on SR alone).
+2. **Add seeds before any writeup.** n = 4 cannot support a significance claim — at n = 4 the smallest attainable permutation p-value is 0.083. The anti-correlation between energy fidelity and tagging efficiency (rho = −1.00) is consistent across all four energy metrics but needs more runs to move from "suggestive" to reportable.
+3. **Multi-seed 16× and 32×.** Both are single-seed today, so their efficiencies (72.9%, 75.0%) carry unknown error bars and the apparent monotonic trend across scales is untested.
+4. **Add a task-aware term to the generator loss.** Feature alignment against the tagger's activations targets the failure directly, rather than optimizing pixel metrics that provably anti-correlate with the task.
+5. **Audit `psnr_norm` in `engine.py`** — see the note under Metrics. Across the four seeds it ranges +2.6 to −9.0 (CV 201%) alongside 97.9% tagging efficiency, which is not physically possible and confirms the metric-computation artifact.
+6. **Port SEMD into `classification_eval.py`.** `semd_correlation.py` is in place and runs, but every SEMD row reads `absent from results JSON` until the eval writes a `semd` block — so the metric-blindness hypothesis it exists to test cannot actually be tested yet.
+7. Progressive and stabilized training variants at 128-padded resolution are in progress.
