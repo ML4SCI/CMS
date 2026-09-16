@@ -219,6 +219,7 @@ multiscale_sr/
 ├── ARCHITECTURE.md               # line-referenced design rationale
 ├── TRAINING_STABILITY.md         # the mode-collapse failure and its fix
 ├── POINT_CLOUD_EXPLORATION.md    # point-cloud representation: exploration + recommendation
+├── NORMALIZING_FLOWS_EXPLORATION.md # normalizing flows: exploration + recommendation
 ├── reports/
 │   ├── multiscale_2026-07/       # full evaluation: 32 figures, all 3 scales
 │   └── classification_eval/      # earlier per-scale figure suite
@@ -341,6 +342,8 @@ Open threads, in priority order:
 4. Progressive and stabilized training variants at 128-padded resolution are in progress.
 
 **Point-cloud representation** (raised in mentor review) was explored and is **not recommended before the project deadline** — it requires a parallel data/model/loss/eval pipeline rather than an extension of the current one. Full writeup: [`POINT_CLOUD_EXPLORATION.md`](POINT_CLOUD_EXPLORATION.md).
+
+**Normalizing flows** (raised in mentor review, alongside the physics-loss rework) were also explored: a full flow-based generator replacement is **not recommended before the deadline** (it discards the hard-won adversarial-training stability work for a from-scratch invertible architecture), but a small flow-based physics-consistency loss layered on the current GAN is a reasonable low-risk follow-up once the scalar physics loss (#2) is settled. Full writeup: [`NORMALIZING_FLOWS_EXPLORATION.md`](NORMALIZING_FLOWS_EXPLORATION.md).
 
 ## Presentation notes
 
