@@ -218,6 +218,7 @@ multiscale_sr/
 ├── configs/                      # scale_16 / scale_32 / scale_64 YAML
 ├── ARCHITECTURE.md               # line-referenced design rationale
 ├── TRAINING_STABILITY.md         # the mode-collapse failure and its fix
+├── POINT_CLOUD_EXPLORATION.md    # point-cloud representation: exploration + recommendation
 ├── reports/
 │   ├── multiscale_2026-07/       # full evaluation: 32 figures, all 3 scales
 │   └── classification_eval/      # earlier per-scale figure suite
@@ -338,6 +339,8 @@ Open threads, in priority order:
 2. **32× has not converged.** Going 40 → 60 epochs moved peak_ratio 0.822 → 0.873 and val_L1 0.0757 → 0.0741, still improving (both tagger-independent). A longer budget is the cheapest remaining gain.
 3. **Audit `psnr_norm` in `engine.py`** — see the note under Metrics.
 4. Progressive and stabilized training variants at 128-padded resolution are in progress.
+
+**Point-cloud representation** (raised in mentor review) was explored and is **not recommended before the project deadline** — it requires a parallel data/model/loss/eval pipeline rather than an extension of the current one. Full writeup: [`POINT_CLOUD_EXPLORATION.md`](POINT_CLOUD_EXPLORATION.md).
 
 ## Presentation notes
 
