@@ -427,6 +427,15 @@ SR (generator output, the recovery).
 - All sources share HR spatial size (LR is bicubic-upsampled) so one tagger
   architecture consumes any of them and comparisons are fair.
 - Parquet only — the HDF5/CaloChallenge data has no class label.
+- **Training physics loss:** this checkpoint was trained with
+  `physics_loss_type={results['physics_loss_type']}` (lambda_physics=
+  {results['lambda_physics']}). `ratio` = |sum(E_pred)/sum(E_true) - 1|, equal
+  weight per fractional energy-conservation error. `l2` = (response - 1)^2,
+  penalizes large misses (e.g. on rare high-energy events) more heavily. See
+  `multiscale_sr/engine.py` (`physics_loss_ratio` / `physics_loss_l2`) and
+  `train.py --physics-loss-type`. Compare `val_phys_loss_ratio` /
+  `val_phys_loss_l2` across runs (both are logged every epoch regardless of
+  which one trained the model) to see how each formulation trends.
 """
     path.write_text(md, encoding="utf-8")
 
@@ -485,7 +494,13 @@ def main() -> None:
     )
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    results: dict[str, object] = {"scale": scale, "n_train": len(train_idx), "n_test": len(test_idx)}
+    results: dict[str, object] = {
+        "scale": scale,
+        "n_train": len(train_idx),
+        "n_test": len(test_idx),
+        "physics_loss_type": ckpt_args.get("physics_loss_type", "ratio"),
+        "lambda_physics": ckpt_args.get("lambda_physics"),
+    }
 
     # ---- Train the fixed HR tagger, score every source ----
     print("[cls] training fixed HR tagger...")

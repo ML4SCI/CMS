@@ -8,7 +8,7 @@ Loss (matches the SRGAN baseline):
     L_adv = 0.5 * mean[(D(fake) - 1)^2]                  (LSGAN generator)
     L_D   = 0.5 * mean[(D(real) - real_label)^2 + D(fake)^2]
     L_l1  = mean|G(lr) - hr|                              (normalized tensors)
-    L_phys= mean|sum(E_pred)/sum(E_true) - 1|            (denormalized tensors)
+    L_phys= see `physics_loss` — selectable "ratio" or "l2" formulation (denormalized tensors)
 """
 from __future__ import annotations
 
@@ -43,9 +43,48 @@ def energy_response(pred_raw: Tensor, target_raw: Tensor) -> Tensor:
     return pred_energy / target_energy.clamp_min(1e-6)
 
 
-def physics_loss(pred_raw: Tensor, target_raw: Tensor) -> Tensor:
-    """Direct relative-response constraint |response - 1| on raw energies."""
+def physics_loss_ratio(pred_raw: Tensor, target_raw: Tensor) -> Tensor:
+    """Relative-response constraint |sum(E_pred)/sum(E_true) - 1|, mean over the batch.
+
+    Scale-free: a 1% fractional miss on a low-energy event and a 1% miss on a
+    high-energy event contribute equally. That equalizes emphasis across the
+    energy spectrum, which can under-penalize absolute energy errors on rare,
+    physically important high-energy events relative to `physics_loss_l2`.
+    """
     return (energy_response(pred_raw, target_raw) - 1.0).abs().mean()
+
+
+def physics_loss_l2(pred_raw: Tensor, target_raw: Tensor) -> Tensor:
+    """Squared absolute energy-conservation error, normalized by target energy scale.
+
+    ``mean[((sum(E_pred) - sum(E_true)) / sum(E_true))^2]`` — same relative-error
+    quantity as the ratio loss but squared instead of absolute, so it grows
+    superlinearly with the fractional miss and, being averaged in raw-energy
+    ratio space rather than clipped to |.-1|, keeps gradient signal proportional
+    to error size on large misses (no flattening near the |x-1| kink). Per-sample
+    normalization by ``sum(E_true)`` keeps the term dimensionless like the ratio
+    loss (so `--lambda-physics` remains comparable in scale between formulations)
+    while still penalizing large absolute misses more heavily than the ratio loss
+    does, since squaring amplifies the tail rather than averaging it away.
+    """
+    resp = energy_response(pred_raw, target_raw)
+    return ((resp - 1.0) ** 2).mean()
+
+
+def physics_loss(
+    pred_raw: Tensor, target_raw: Tensor, formulation: str = "ratio"
+) -> Tensor:
+    """Physics energy-conservation loss. ``formulation``: "ratio" (default) or "l2".
+
+    See `physics_loss_ratio` / `physics_loss_l2` for the tradeoff. Kept as a
+    single dispatcher (rather than callers picking the function directly) so
+    `--physics-loss-type` in train.py is the one place formulation is chosen.
+    """
+    if formulation == "ratio":
+        return physics_loss_ratio(pred_raw, target_raw)
+    if formulation == "l2":
+        return physics_loss_l2(pred_raw, target_raw)
+    raise ValueError(f"formulation must be 'ratio' or 'l2', got {formulation!r}")
 
 
 def weighted_l1_loss(
@@ -115,12 +154,19 @@ def evaluate(
     device: torch.device,
     max_batches: int | None = None,
 ) -> dict[str, float]:
-    """Compute val L1 (normalized), PSNR (normalized), and energy response."""
+    """Compute val L1 (normalized), PSNR (normalized), and energy response.
+
+    Both physics-loss formulations (`phys_loss_ratio`, `phys_loss_l2`) are always
+    reported regardless of which one trained the checkpoint, so a single run
+    yields comparison data for both — see engine.physics_loss_ratio/_l2.
+    """
     generator.eval()
     l1_sum = 0.0
     pix_count = 0
     psnr_sum = 0.0
     resp_sum = 0.0
+    phys_ratio_sum = 0.0
+    phys_l2_sum = 0.0
     peak_sum = 0.0
     nonzero_sum = 0.0
     n_batches = 0
@@ -137,6 +183,8 @@ def evaluate(
         fake_raw = denormalize(fake.float(), stats)
         hr_raw = denormalize(hr.float(), stats)
         resp_sum += energy_response(fake_raw, hr_raw).mean().item()
+        phys_ratio_sum += physics_loss_ratio(fake_raw, hr_raw).item()
+        phys_l2_sum += physics_loss_l2(fake_raw, hr_raw).item()
 
         pk = peak_metrics(fake, hr)
         peak_sum += pk["peak_ratio"]
@@ -151,6 +199,8 @@ def evaluate(
         "l1": l1_sum / max(pix_count, 1),
         "psnr_norm": psnr_sum / n,
         "energy_response": resp_sum / n,
+        "phys_loss_ratio": phys_ratio_sum / n,
+        "phys_loss_l2": phys_l2_sum / n,
         "peak_ratio": peak_sum / n,
         "nonzero_ratio": nonzero_sum / n,
     }

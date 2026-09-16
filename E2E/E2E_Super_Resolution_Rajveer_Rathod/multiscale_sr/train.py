@@ -64,6 +64,12 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Disable the generator's bicubic LR global-residual skip")
     p.add_argument("--lambda-l1", type=float, default=10.0)
     p.add_argument("--lambda-physics", type=float, default=10.0)
+    p.add_argument("--physics-loss-type", type=str, default="ratio", choices=["ratio", "l2"],
+                   help="Energy-conservation physics loss formulation: 'ratio' "
+                        "(|sum(E_pred)/sum(E_true) - 1|, equal weight per fractional "
+                        "error) or 'l2' ((sum(E_pred)/sum(E_true) - 1)^2, penalizes "
+                        "large misses more heavily — see multiscale_sr/engine.py "
+                        "physics_loss_ratio/physics_loss_l2)")
     p.add_argument("--lambda-adv", type=float, default=1.0, help="Peak adversarial loss weight")
     p.add_argument("--l1-weighting", type=str, default="energy", choices=["uniform", "energy"],
                    help="Up-weight bright HR pixels in L1 to prevent the 'predict small' collapse")
@@ -287,7 +293,7 @@ def train(args: argparse.Namespace) -> None:
 
             # --- Generator update ---
             l1 = weighted_l1_loss(fake, hr, weighting=args.l1_weighting, alpha=args.l1_weight_alpha)
-            phys = physics_loss(fake_raw, hr_raw)
+            phys = physics_loss(fake_raw, hr_raw, formulation=args.physics_loss_type)
             g_loss = args.lambda_l1 * l1 + args.lambda_physics * phys
             if adv_active:
                 fake_logits_g = discriminator(lr, fake)
@@ -360,9 +366,10 @@ def train(args: argparse.Namespace) -> None:
 
         print(
             f"epoch {epoch:03d} g={record['train_g_loss']:.4f} d={record['train_d_loss']:.4f} "
-            f"l1={record['train_l1']:.4f} phys={record['train_phys']:.4f} "
+            f"l1={record['train_l1']:.4f} phys[{args.physics_loss_type}]={record['train_phys']:.4f} "
             f"val_l1={record['val_l1']:.4f} val_psnr={record['val_psnr_norm']:.2f} "
             f"resp={record['val_energy_response']:.3f} "
+            f"phys_ratio={record['val_phys_loss_ratio']:.4f} phys_l2={record['val_phys_loss_l2']:.4f} "
             f"peak={record['val_peak_ratio']:.3f} nz={record['val_nonzero_ratio']:.3f} "
             f"advw={adv_w:.2f} dskip={d_skip_frac:.2f} alpha={record['lr_skip_alpha']:.3f}"
         )
