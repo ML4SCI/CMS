@@ -74,6 +74,14 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--tagger-epochs", type=int, default=15)
     p.add_argument("--tagger-width", type=int, default=32)
     p.add_argument("--seed", type=int, default=42)
+    p.add_argument("--tagger-seed", type=int, default=None,
+                   help="Explicit tagger RNG seed; overrides --tagger-seed-per-scale if set")
+    p.add_argument("--tagger-seed-per-scale", action="store_true", default=True,
+                   help="Derive the tagger's RNG seed as --seed + scale (default: on) so "
+                        "different scales don't train near-duplicate taggers on the same "
+                        "scale-independent held-out HR images — see classification_eval.py "
+                        "for the full rationale")
+    p.add_argument("--no-tagger-seed-per-scale", dest="tagger_seed_per_scale", action="store_false")
     p.add_argument("--out-dir", type=str, default=None,
                    help="Where to write json + figures (default: <run>/figures/tagging)")
     p.add_argument("--skip-per-source", action="store_true",
@@ -193,13 +201,23 @@ def main() -> None:
     )
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    results: dict[str, object] = {"scale": scale, "n_train": len(train_idx), "n_test": len(test_idx)}
+    # See classification_eval.py for why this is derived per-scale: the held-out
+    # val/test row split is scale-independent, so a shared seed across scales
+    # would train near-duplicate taggers on identical HR images.
+    tagger_seed = args.tagger_seed
+    if tagger_seed is None:
+        tagger_seed = (args.seed + scale) if args.tagger_seed_per_scale else args.seed
+
+    results: dict[str, object] = {
+        "scale": scale, "n_train": len(train_idx), "n_test": len(test_idx),
+        "tagger_seed": tagger_seed,
+    }
 
     # ---- PRIMARY: fixed HR-trained tagger evaluated on HR/LR/SR ----
-    print("[tag] PRIMARY: training tagger on HR...")
+    print(f"[tag] PRIMARY: training tagger on HR (seed={tagger_seed})...")
     hr_tagger = train_tagger(
         data["hr"][train_idx], y_train, env.device,
-        width=args.tagger_width, epochs=args.tagger_epochs, seed=args.seed,
+        width=args.tagger_width, epochs=args.tagger_epochs, seed=tagger_seed,
     )
     if args.save_hr_tagger:
         save_path = Path(args.save_hr_tagger)
@@ -238,7 +256,7 @@ def main() -> None:
         for src in _SOURCES:
             t = train_tagger(
                 data[src][train_idx], y_train, env.device,
-                width=args.tagger_width, epochs=args.tagger_epochs, seed=args.seed,
+                width=args.tagger_width, epochs=args.tagger_epochs, seed=tagger_seed,
             )
             auc = eval_tagger_auc(t, data[src][test_idx], y_test, env.device)
             per_source_auc[src] = auc

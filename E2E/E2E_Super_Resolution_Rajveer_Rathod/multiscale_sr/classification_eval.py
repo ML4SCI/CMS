@@ -94,6 +94,16 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--tagger-epochs", type=int, default=15)
     p.add_argument("--tagger-width", type=int, default=32)
     p.add_argument("--seed", type=int, default=42)
+    p.add_argument("--tagger-seed", type=int, default=None,
+                   help="Explicit tagger RNG seed; overrides --tagger-seed-per-scale if set")
+    p.add_argument("--tagger-seed-per-scale", action="store_true", default=True,
+                   help="Derive the tagger's RNG seed as --seed + scale (default: on). Without "
+                        "this, HR/LR/SR at every scale share the same held-out HR test images "
+                        "(the val/test split is scale-independent, see data/normalization.py "
+                        "held_out_row_split) and the same --seed, so 'per-scale taggers' would "
+                        "otherwise train on identical data with identical init and end up "
+                        "near-duplicates rather than genuinely independent per scale")
+    p.add_argument("--no-tagger-seed-per-scale", dest="tagger_seed_per_scale", action="store_false")
     p.add_argument("--out-dir", type=str, default=None,
                    help="Default: <run>/figures/classification")
     p.add_argument("--skip-per-source", action="store_true",
@@ -403,6 +413,9 @@ SR (generator output, the recovery).
 - **Background rejection 1/eps_B @ {_ROC50_EFF:.0%} signal eff** —
   HR={prim['bkg_rej_at_50']['hr']:.1f}, LR={prim['bkg_rej_at_50']['lr']:.1f},
   SR={prim['bkg_rej_at_50']['sr']:.1f}. The HEP-standard operating point.
+- **Tagger:** width={results['tagger_width']}, epochs={results['tagger_epochs']},
+  seed={results['tagger_seed']} — see Method notes below for what this seed means
+  and why it matters for cross-scale comparisons.
 
 ## Figures
 
@@ -427,6 +440,18 @@ SR (generator output, the recovery).
 - All sources share HR spatial size (LR is bicubic-upsampled) so one tagger
   architecture consumes any of them and comparisons are fair.
 - Parquet only — the HDF5/CaloChallenge data has no class label.
+- **Per-scale tagger independence:** the held-out val/test row split
+  (`data/normalization.py: held_out_row_split`) depends only on row index and
+  `--val-ratio`, not on `scale` — so with the same `--data-dir`/`--val-ratio`,
+  every scale's "test" HR images are the *same* images. If every scale also
+  used the same tagger seed, "per-scale taggers" would be near-duplicate
+  training runs (same data, same init) rather than genuinely independent ones.
+  By default (`--tagger-seed-per-scale`, on unless `--tagger-seed` is passed
+  explicitly) the tagger seed is `--seed + scale`, so this checkpoint's tagger
+  (seed={results['tagger_seed']}) differs from another scale's by design. Pass
+  `--no-tagger-seed-per-scale` to force all scales back onto the same seed
+  (e.g. to isolate scale effects from tagger-init variance), or `--tagger-seed`
+  to pin an exact value.
 - **Training physics loss:** this checkpoint was trained with
   `physics_loss_type={results['physics_loss_type']}` (lambda_physics=
   {results['lambda_physics']}). `ratio` = |sum(E_pred)/sum(E_true) - 1|, equal
@@ -494,19 +519,32 @@ def main() -> None:
     )
     out_dir.mkdir(parents=True, exist_ok=True)
 
+    # The held-out val/test row split is scale-independent (held_out_row_split
+    # keys off row index and val_ratio only, not scale — see data/normalization.py),
+    # so with the same --data-dir and --val-ratio every scale's "test" HR images
+    # are identical. Deriving the tagger seed from scale (instead of reusing the
+    # same --seed everywhere) is what actually makes each scale's tagger an
+    # independent training run rather than a near-duplicate of the others.
+    tagger_seed = args.tagger_seed
+    if tagger_seed is None:
+        tagger_seed = (args.seed + scale) if args.tagger_seed_per_scale else args.seed
+
     results: dict[str, object] = {
         "scale": scale,
         "n_train": len(train_idx),
         "n_test": len(test_idx),
         "physics_loss_type": ckpt_args.get("physics_loss_type", "ratio"),
         "lambda_physics": ckpt_args.get("lambda_physics"),
+        "tagger_seed": tagger_seed,
+        "tagger_width": args.tagger_width,
+        "tagger_epochs": args.tagger_epochs,
     }
 
     # ---- Train the fixed HR tagger, score every source ----
-    print("[cls] training fixed HR tagger...")
+    print(f"[cls] training fixed HR tagger (seed={tagger_seed})...")
     hr_tagger = train_tagger(
         data["hr"][train_idx], y[train_idx], env.device,
-        width=args.tagger_width, epochs=args.tagger_epochs, seed=args.seed,
+        width=args.tagger_width, epochs=args.tagger_epochs, seed=tagger_seed,
     )
     scores = {src: tagger_scores(hr_tagger, data[src][test_idx], env.device) for src in _SOURCES}
 
@@ -555,7 +593,7 @@ def main() -> None:
         for src in _SOURCES:
             t = train_tagger(
                 data[src][train_idx], y[train_idx], env.device,
-                width=args.tagger_width, epochs=args.tagger_epochs, seed=args.seed,
+                width=args.tagger_width, epochs=args.tagger_epochs, seed=tagger_seed,
             )
             s = tagger_scores(t, data[src][test_idx], env.device)
             fpr, tpr, _thr, auc = roc_points(s, y_test_np)
