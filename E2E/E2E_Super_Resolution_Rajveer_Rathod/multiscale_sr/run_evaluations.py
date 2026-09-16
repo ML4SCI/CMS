@@ -161,7 +161,9 @@ def write_report(meta: dict, res: dict, status: str, out_run_dir: Path) -> None:
         f"**Reached epoch:** {meta['reached_epoch']}\n"
         f"- **Checkpoint:** `{meta['checkpoint']}`\n"
         f"- **Status:** {status}\n"
-        f"- **Tagger:** fixed HR-trained, {res['n_train']} train / {res['n_test']} test\n"
+        f"- **Tagger:** fixed HR-trained, seed={res.get('tagger_seed')}, "
+        f"width={res.get('tagger_width')}, epochs={res.get('tagger_epochs')}, "
+        f"{res['n_train']} train / {res['n_test']} test\n"
     )
     md.append("\n## Headline metrics (fixed HR tagger)\n")
     md.append("| Source | AUC | 1/εB @ 50% |\n|---|---|---|")
@@ -227,7 +229,7 @@ def write_summary(rows: list[dict], out_date_dir: Path, args) -> None:
     fields = [
         "run", "scale", "cfg_epochs", "reached_epoch", "status",
         "auc_hr", "auc_lr", "auc_sr", "efficiency", "recovery",
-        "bkg_rej_sr_at_50", "sr_hr_pearson", "ece_sr",
+        "bkg_rej_sr_at_50", "sr_hr_pearson", "ece_sr", "tagger_seed",
     ]
     with (out_date_dir / "master_metrics.csv").open("w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=fields)
@@ -240,7 +242,8 @@ def write_summary(rows: list[dict], out_date_dir: Path, args) -> None:
 
     md = [f"# Cross-Run Evaluation Summary — {out_date_dir.name}\n"]
     md.append(f"Evaluated {len(rows)} checkpoint(s); {len(ok)} succeeded. "
-              f"Same parquet, same downsampling, same fixed HR tagger, seed={args.seed}.\n")
+              f"Same parquet, same downsampling. Tagger seed defaults to "
+              f"base seed ({args.seed}) + scale — see 'Per-scale tagger seeds' below.\n")
 
     md.append("## Master table (fixed HR tagger)\n")
     md.append("| Run | Scale | Cfg ep | Reached | AUC_SR | Efficiency | Recovery | Status |")
@@ -259,15 +262,45 @@ def write_summary(rows: list[dict], out_date_dir: Path, args) -> None:
         md.append(f"- **{sc}x:** `{best['run']}` — efficiency {best['efficiency']*100:.1f}%, "
                   f"recovery {best['recovery']*100:.1f}% ({best['status']})")
 
-    # AUC_HR consistency assertion
-    md.append("\n## Sanity: AUC_HR consistency across runs\n")
-    hrs = [r["auc_hr"] for r in ok if r.get("auc_hr") is not None]
-    if hrs:
+    # AUC_HR consistency assertion — grouped by scale, since tagger seed (and
+    # therefore AUC_HR) is now *expected* to differ across scales by design
+    # (see "Per-scale tagger seeds" below). Comparing across all runs regardless
+    # of scale would flag expected inter-scale seed variance as a false alarm;
+    # within one scale, every run still shares the same tagger seed, so that
+    # grouping is where a genuine inconsistency (seed/data bug) would show up.
+    md.append("\n## Sanity: AUC_HR consistency across runs (within each scale)\n")
+    for sc in sorted({r["scale"] for r in ok if r["scale"] is not None}):
+        hrs = [r["auc_hr"] for r in ok if r["scale"] == sc and r.get("auc_hr") is not None]
+        if not hrs:
+            continue
         spread = max(hrs) - min(hrs)
         flag = "OK" if spread <= 0.02 else "⚠️ >0.02 — check seed/data"
-        md.append(f"- AUC_HR range across runs: {min(hrs):.3f}–{max(hrs):.3f} "
-                  f"(spread {spread:.3f}) — {flag}. A fixed HR tagger should give ~identical "
-                  f"AUC_HR regardless of the SR model.")
+        md.append(f"- **{sc}x:** AUC_HR range {min(hrs):.3f}–{max(hrs):.3f} "
+                  f"(spread {spread:.3f}) — {flag}. Runs at the same scale share the same "
+                  f"tagger seed, so a fixed HR tagger should give ~identical AUC_HR here "
+                  f"regardless of the SR model.")
+
+    # Per-scale tagger seeds — documents which tagger produced each scale's numbers.
+    md.append("\n## Per-scale tagger seeds\n")
+    md.append(
+        "Each scale gets its own tagger seed (`base_seed + scale`, default base "
+        f"seed {args.seed}) rather than sharing one seed across scales. This "
+        "matters because the held-out val/test row split is scale-independent "
+        "(`data/normalization.py: held_out_row_split` keys off row index and "
+        "`--val-ratio` only) — with the same data dir and val-ratio, every "
+        "scale's 'test' HR images are identical, so a shared seed would make "
+        "per-scale taggers near-duplicate training runs (same data, same init) "
+        "instead of genuinely independent ones. AUC_HR is therefore expected to "
+        "vary *across* scales (different tagger seed/init) but stay tight "
+        "*within* a scale (same seed) — see the per-scale check above.\n"
+    )
+    seeds_by_scale = {}
+    for r in ok:
+        seeds_by_scale.setdefault(r["scale"], set()).add(r.get("tagger_seed"))
+    for sc in sorted(s for s in seeds_by_scale if s is not None):
+        seeds = seeds_by_scale[sc]
+        seed_str = ", ".join(str(s) for s in sorted(seeds, key=lambda x: (x is None, x)))
+        md.append(f"- **{sc}x:** tagger_seed={{{seed_str}}}")
 
     # epoch effect per scale
     md.append("\n## Epoch effect (does more training help?)\n")
@@ -368,6 +401,7 @@ def main() -> None:
                 "bkg_rej_sr_at_50": p["bkg_rej_at_50"]["sr"],
                 "sr_hr_pearson": p["score_agreement_vs_hr"]["sr"]["pearson_r"],
                 "ece_sr": p["calibration_ece"]["sr"],
+                "tagger_seed": res.get("tagger_seed"),
             })
             print(f"    efficiency={p['tagging_efficiency_sr_over_hr']*100:.1f}%  "
                   f"recovery={rec*100:.1f}%  [{status}]")
