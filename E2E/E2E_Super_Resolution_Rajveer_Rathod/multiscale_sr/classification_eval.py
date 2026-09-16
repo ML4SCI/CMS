@@ -65,7 +65,7 @@ from multiscale_sr.data.normalization import ChannelStats, denormalize
 from multiscale_sr.engine import collect_tagging_tensors
 from multiscale_sr.models import Generator
 from multiscale_sr.tagger import tagger_scores, train_tagger
-from multiscale_sr.utils import resolve_env, seed_everything
+from multiscale_sr.utils import load_generator_state, resolve_env, seed_everything
 
 PACKAGE_ROOT = Path(__file__).resolve().parent
 _SOURCES = ("hr", "lr", "sr")
@@ -452,7 +452,7 @@ def main() -> None:
         base_channels=ckpt_args.get("gen_channels", 64),
         num_blocks=ckpt_args.get("gen_blocks", 8),
     ).to(env.device)
-    gen.load_state_dict(ckpt["generator"])
+    load_generator_state(gen, ckpt["generator"])
 
     cache = Path(args.checkpoint).parent.parent / "normalization.json"
     if not cache.exists():
