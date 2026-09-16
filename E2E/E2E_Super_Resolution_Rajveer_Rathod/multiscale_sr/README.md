@@ -12,23 +12,41 @@
 
 Calorimeter images from the CMS detector are sparse, high-dynamic-range, and physically constrained — the total deposited energy means something. Standard image super-resolution (SR) treats them like photographs and optimizes PSNR/SSIM, which rewards a generator for producing smooth, plausible-looking output. For physics data that is the wrong target: a model can score well on pixels while destroying exactly the fine structure a downstream jet tagger depends on.
 
-This project trains an **independent GAN per downsampling scale** (16×, 32×, 64×) to answer a specific question:
+This project trains an **independent GAN per downsampling scale** to answer a specific question:
 
 > As detector input resolution degrades, how much *physics-classification* information can super-resolution actually recover — and at what point does it stop working?
 
 The central methodological contribution is a **classification-based evaluation** that makes taggability the headline metric instead of pixel fidelity.
 
+## Terminology and scale notation
+
+- **HR** — ground-truth high-resolution image (128×128, the fixed reference for every scale).
+- **LR** — low-resolution input, produced by area-downsampling HR (see [Method](#method)).
+- **SR** — the generator's super-resolved output, i.e. its reconstruction of HR from LR.
+
+**"16×", "32×", "64×" name the LR resolution (LR is `scale × scale` pixels), not a reduction factor.** Read against a 128×128 HR, that is an **8× reduction** at scale 16, **4× reduction** at scale 32, and **2× reduction** at scale 64 (each dimension). This table is the unambiguous reference (see also [`ARCHITECTURE.md`](ARCHITECTURE.md)):
+
+| Label used elsewhere | LR resolution | Reduction factor (per dim) | Upscale path |
+|---:|---:|---:|---|
+| 16× | 16×16 | 8× (128 → 16) | 16 → 32 → 64 → 128 |
+| 32× | 32×32 | 4× (128 → 32) | 32 → 64 → 128 |
+| 64× | 64×64 | 2× (128 → 64) | 64 → 128 |
+
 ## Headline result
 
-**Tagging efficiency = AUC_SR / AUC_HR**, using a single tagger trained on real HR images and then frozen. 100% means SR output is as taggable as ground truth.
+**Tagging efficiency = AUC_SR / AUC_HR** — how taggable SR output is relative to ground truth, using a single tagger trained on real HR images and then frozen. 100% means SR is as taggable as HR; below 100% means some class-discriminating information was lost or corrupted by the SR step.
+
+**Recovery fraction = (AUC_SR − AUC_LR) / (AUC_HR − AUC_LR)** — how much of the *taggability gap between LR and HR* the SR step closes. 100% means SR fully recovers what downsampling destroyed; 0% means SR is exactly as taggable as the raw LR input (no benefit over doing nothing); **negative** means SR is *less* taggable than LR itself — the generator actively made the physics-classification problem worse, even if it looks fine by eye.
 
 Latest runs, after the training-stability fix (seed 42, n_test = 1210, AUC_HR = 0.669 for every row):
 
-| Scale | Epochs | val_L1 ↓ | peak_ratio ↑ | AUC_SR | Efficiency (SR/HR) | LR→HR gap recovered | per-sample r |
-|------:|-------:|---------:|-------------:|-------:|-------------------:|--------------------:|-------------:|
-| 16× | 30 | 0.0935 | 0.688 | 0.487 | 72.9% | **−153.9%** | 0.19 |
-| 32× | 40 | 0.0757 | 0.822 | 0.501 | 75.0% | +13.8% | 0.25 |
-| **64×** | 40 | **0.0660** | **0.887** | **0.628** | **93.9%** | **+78.5%** | **0.64** |
+| Scale (LR res.) | Reduction | Epochs | val_L1 ↓ | peak_ratio ↑ | AUC_HR | AUC_LR | AUC_SR | Efficiency (SR/HR) | Recovery (LR→HR gap) | per-sample r |
+|---:|---:|-------:|---------:|-------------:|-------:|-------:|-------:|-------------------:|--------------------:|-------------:|
+| 16×16 | 8× | 30 | 0.0935 | 0.688 | 0.669 | 0.597 | 0.487 | 72.9% | **−153.9%** | 0.19 |
+| 32×32 | 4× | 40 | 0.0757 | 0.822 | 0.669 | 0.474 | 0.501 | 75.0% | +13.8% | 0.25 |
+| **64×64** | **2×** | 40 | **0.0660** | **0.887** | 0.669 | 0.478 | **0.628** | **93.9%** | **+78.5%** | **0.64** |
+
+AUC_LR is the fixed HR-tagger's score on the raw (un-super-resolved) downsampled input at each scale — the baseline SR must beat to add value. (16× is reported directly in [`reports/multiscale_2026-07/REPORT.md`](reports/multiscale_2026-07/REPORT.md#5-taggability-the-physics-facing-metric); 32×/64× are back-solved from the reported efficiency/recovery/AUC_HR/AUC_SR figures via `AUC_LR = (AUC_SR − recovery·AUC_HR) / (1 − recovery)`, since the full report doesn't list them directly for those two scales — flagged here as a gap to close by reporting AUC_LR explicitly in future runs, per the mentor note on always showing baseline AUC alongside derived ratios.)
 
 A longer **32× run at 60 epochs** does better still — val_L1 0.0741, peak_ratio 0.873, efficiency **80.2%**, recovery **+25.3%** — but was scored against a separate tagger instance, so it is reported in the ablation rather than mixed into this table.
 
@@ -286,8 +304,8 @@ Evaluates all runs under `experiments/` with one fixed HR tagger and a common se
 | `val_peak_ratio` | SR peak brightness / HR peak brightness; the mode-collapse detector |
 | `val_energy_response` | `sum(E_pred)/sum(E_true)` on denormalized energy; 1.0 is unbiased |
 | `d_skip_frac` | Fraction of steps the discriminator was throttled; ~1.0 means it is frozen |
-| **tagging efficiency** | `AUC_SR / AUC_HR` — the physics-facing headline |
-| **recovery fraction** | How much of the LR→HR gap SR closes; negative means worse than bicubic |
+| **tagging efficiency** | `AUC_SR / AUC_HR` — the physics-facing headline. 1.0 = as taggable as HR |
+| **recovery fraction** | `(AUC_SR − AUC_LR) / (AUC_HR − AUC_LR)` — 1.0 = fully recovers the LR→HR taggability gap, 0.0 = no better than raw LR, negative = worse than raw LR. See [Headline result](#headline-result) for the full explanation and baseline AUC_HR/AUC_LR values |
 
 > `val_psnr_norm` is currently **not trustworthy**: the 64× run reports −3.91 while posting the best L1, peak_ratio, and tagging efficiency of any run. That combination points to a metric-computation artifact in `engine.py`, so PSNR is excluded from the tables above pending an audit.
 
@@ -320,3 +338,13 @@ Open threads, in priority order:
 2. **32× has not converged.** Going 40 → 60 epochs moved peak_ratio 0.822 → 0.873 and val_L1 0.0757 → 0.0741, still improving (both tagger-independent). A longer budget is the cheapest remaining gain.
 3. **Audit `psnr_norm` in `engine.py`** — see the note under Metrics.
 4. Progressive and stabilized training variants at 128-padded resolution are in progress.
+
+## Presentation notes
+
+This README is the single source of truth for terminology; the slide deck should match it. Checklist for the next deck pass (from mentor review, see project issue #4):
+
+- [ ] Relabel every image panel as **HR (ground truth)** / **LR (downsampled input)** / **SR (model output)** — never bare "input"/"output"/"prediction".
+- [ ] State the downsampling method explicitly on whichever slide first shows LR images: **area-averaging** (`F.interpolate(mode="area")`, see [Method](#method)), not bicubic or nearest-neighbour.
+- [ ] Replace every bare "16×"/"32×"/"64×" with the explicit form, e.g. **"128 → 16 px (8× reduction per dimension)"** — see [Terminology and scale notation](#terminology-and-scale-notation) above for the full table.
+- [ ] Add a dedicated metrics-definition slide with the efficiency and recovery formulas and the 1.0/0.0/negative interpretation (text above, not just spoken).
+- [ ] Every efficiency/recovery number shown must be accompanied by the AUC_HR and AUC_LR it was computed from, not the ratio alone.
