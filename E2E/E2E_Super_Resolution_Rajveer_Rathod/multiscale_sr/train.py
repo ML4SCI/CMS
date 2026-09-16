@@ -38,7 +38,7 @@ from multiscale_sr.engine import (
 from multiscale_sr.experiment import load_config, make_experiment_dir, save_config
 from multiscale_sr.models import Discriminator, Generator
 from multiscale_sr.tagger import JetTagger, eval_tagger_auc
-from multiscale_sr.utils import resolve_env, seed_everything
+from multiscale_sr.utils import load_generator_state, resolve_env, seed_everything
 from multiscale_sr.wandb_logger import WandbLogger, load_env
 
 PACKAGE_ROOT = Path(__file__).resolve().parent
@@ -191,7 +191,7 @@ def train(args: argparse.Namespace) -> None:
     best_val = math.inf
     if args.resume:
         ckpt = torch.load(args.resume, map_location=env.device)
-        generator.load_state_dict(ckpt["generator"])
+        load_generator_state(generator, ckpt["generator"])
         discriminator.load_state_dict(ckpt["discriminator"])
         opt_g.load_state_dict(ckpt["optimizer_g"])
         opt_d.load_state_dict(ckpt["optimizer_d"])
@@ -335,6 +335,7 @@ def train(args: argparse.Namespace) -> None:
             "adv_weight": adv_w,
             "d_skip_frac": d_skip_frac,
             "d_input_noise": noise_std,
+            "lr_skip_alpha": generator.lr_skip_alpha.item(),
         }
         val_metrics = evaluate(generator, val_loader, stats, env.device, max_batches=args.max_val_batches)
         record = {**train_metrics, **{f"val_{k}": v for k, v in val_metrics.items()}}
@@ -363,7 +364,7 @@ def train(args: argparse.Namespace) -> None:
             f"val_l1={record['val_l1']:.4f} val_psnr={record['val_psnr_norm']:.2f} "
             f"resp={record['val_energy_response']:.3f} "
             f"peak={record['val_peak_ratio']:.3f} nz={record['val_nonzero_ratio']:.3f} "
-            f"advw={adv_w:.2f} dskip={d_skip_frac:.2f}"
+            f"advw={adv_w:.2f} dskip={d_skip_frac:.2f} alpha={record['lr_skip_alpha']:.3f}"
         )
         with paths.metrics_jsonl.open("a", encoding="utf-8") as f:
             f.write(json.dumps(record) + "\n")

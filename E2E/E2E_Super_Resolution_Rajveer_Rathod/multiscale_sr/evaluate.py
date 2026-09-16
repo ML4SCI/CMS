@@ -25,7 +25,7 @@ from multiscale_sr.data import get_dataloader
 from multiscale_sr.data.normalization import ChannelStats
 from multiscale_sr.engine import evaluate, render_sample_grid
 from multiscale_sr.models import Generator
-from multiscale_sr.utils import resolve_env
+from multiscale_sr.utils import load_generator_state, resolve_env
 
 PACKAGE_ROOT = Path(__file__).resolve().parent
 
@@ -63,7 +63,7 @@ def main() -> None:
         base_channels=ckpt_args.get("gen_channels", 64),
         num_blocks=ckpt_args.get("gen_blocks", 8),
     ).to(env.device)
-    gen.load_state_dict(ckpt["generator"])
+    load_generator_state(gen, ckpt["generator"])
 
     # Stats come from the checkpoint, so skip recompute by seeding the cache.
     cache = Path(args.checkpoint).parent.parent / "normalization.json"

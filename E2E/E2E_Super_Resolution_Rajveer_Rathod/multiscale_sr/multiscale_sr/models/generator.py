@@ -3,6 +3,7 @@ from __future__ import annotations
 import math
 import os
 
+import torch
 import torch.nn.functional as F
 from torch import Tensor, nn
 
@@ -92,6 +93,12 @@ class Generator(nn.Module):
         # residual head then has to subtract back out; expose it so it can be
         # disabled per experiment.
         self.lr_skip = lr_skip
+        # Learnable gate on the LR skip, initialized to 1.0 (identity: matches the
+        # old fixed `out + lr_up` behavior). Lets training down-weight the bicubic
+        # prior when it's more misleading than helpful (e.g. at 16x/32x, where LR
+        # carries little accurate signal and the residual head otherwise has to
+        # spend capacity cancelling it back out).
+        self.lr_skip_alpha = nn.Parameter(torch.tensor(1.0))
         self.stem = nn.Sequential(
             nn.Conv2d(in_channels, base_channels, kernel_size=7, padding=3),
             nn.ReLU(inplace=True),
@@ -131,5 +138,5 @@ class Generator(nn.Module):
 
         if self.lr_skip:
             lr_up = F.interpolate(lr, size=target_size, mode="bicubic", align_corners=False)
-            out = out + lr_up
+            out = out + self.lr_skip_alpha * lr_up
         return out
