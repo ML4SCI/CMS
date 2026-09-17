@@ -102,6 +102,7 @@ def semd_loss(
     beta: float = 1.0,
     threshold: float = 0.0,
     normalize_by_energy: bool = True,
+    chunk: int = 1,
 ) -> Tensor:
     """Mean SEMD (top-K pixel approximation) between SR and HR raw energies.
 
@@ -121,7 +122,8 @@ def semd_loss(
     *metric*; this rescaling exists for the loss only.
     """
     d = semd_images(
-        pred_raw, target_raw, topk=topk, omega_R=omega_R, beta=beta, threshold=threshold
+        pred_raw, target_raw, topk=topk, omega_R=omega_R, beta=beta, threshold=threshold,
+        chunk=chunk,
     )
     if normalize_by_energy:
         e_tot = target_raw.sum(dim=(1, 2, 3))
@@ -198,6 +200,7 @@ def evaluate(
     semd_topk: int = 128,
     semd_omega_R: float = 1.0,
     semd_beta: float = 1.0,
+    semd_chunk: int = 1,
 ) -> dict[str, float]:
     """Compute val L1 (normalized), PSNR (normalized), energy response, and SEMD.
 
@@ -242,7 +245,8 @@ def evaluate(
         nonzero_sum += pk["nonzero_ratio"]
 
         semd_sum += semd_images(
-            fake_raw, hr_raw, topk=semd_topk, omega_R=semd_omega_R, beta=semd_beta
+            fake_raw, hr_raw, topk=semd_topk, omega_R=semd_omega_R, beta=semd_beta,
+            chunk=semd_chunk,
         ).mean().item()
 
         n_batches += 1
