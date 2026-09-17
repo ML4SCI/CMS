@@ -48,6 +48,8 @@ Latest runs, after the training-stability fix (seed 42, n_test = 1210, AUC_HR = 
 
 AUC_LR is the fixed HR-tagger's score on the raw (un-super-resolved) downsampled input at each scale — the baseline SR must beat to add value. (16× is reported directly in [`reports/multiscale_2026-07/REPORT.md`](reports/multiscale_2026-07/REPORT.md#5-taggability-the-physics-facing-metric); 32×/64× are back-solved from the reported efficiency/recovery/AUC_HR/AUC_SR figures via `AUC_LR = (AUC_SR − recovery·AUC_HR) / (1 − recovery)`, since the full report doesn't list them directly for those two scales — flagged here as a gap to close by reporting AUC_LR explicitly in future runs, per the mentor note on always showing baseline AUC alongside derived ratios.)
 
+**Caveat on AUC_HR itself:** the fixed HR tagger above is trained on a small held-out slice (~4,032 jets, ~2.9% of the ~139k available) by design — it's meant as a fast, consistent probe for the HR/LR/SR *relative* comparison, not a competitive absolute-AUC claim. A mentor review raised a published baseline around ~0.81 AUC on a comparable dataset; root-cause diagnosis and a reproduction recipe are in [`BASELINE_AUC_REPRODUCTION.md`](BASELINE_AUC_REPRODUCTION.md) — **not yet executed** (no PyTorch/pyarrow available in the environment this was written in). Treat AUC_HR/AUC_LR/AUC_SR above as internally consistent for comparing scales against each other, not yet validated against external published numbers.
+
 A longer **32× run at 60 epochs** does better still — val_L1 0.0741, peak_ratio 0.873, efficiency **80.2%**, recovery **+25.3%** — but was scored against a separate tagger instance, so it is reported in the ablation rather than mixed into this table.
 
 **Reconstruction quality improves monotonically with input resolution**, and the physics metric follows it: at 64× (a 2× upscale) SR recovers 78.5% of the taggability lost to downsampling; at 16× (an 8× upscale) it recovers none of it.
@@ -220,6 +222,7 @@ multiscale_sr/
 ├── TRAINING_STABILITY.md         # the mode-collapse failure and its fix
 ├── POINT_CLOUD_EXPLORATION.md    # point-cloud representation: exploration + recommendation
 ├── NORMALIZING_FLOWS_EXPLORATION.md # normalizing flows: exploration + recommendation
+├── BASELINE_AUC_REPRODUCTION.md  # diagnosis of the 0.698-vs-~0.81 tagger AUC gap
 ├── reports/
 │   ├── multiscale_2026-07/       # full evaluation: 32 figures, all 3 scales
 │   └── classification_eval/      # earlier per-scale figure suite
