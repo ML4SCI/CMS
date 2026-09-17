@@ -33,6 +33,7 @@ from multiscale_sr.engine import (
     physics_loss,
     render_metrics_plot,
     render_sample_grid,
+    semd_loss,
     weighted_l1_loss,
 )
 from multiscale_sr.experiment import load_config, make_experiment_dir, save_config
@@ -71,6 +72,22 @@ def build_parser() -> argparse.ArgumentParser:
                         "large misses more heavily — see multiscale_sr/engine.py "
                         "physics_loss_ratio/physics_loss_l2)")
     p.add_argument("--lambda-adv", type=float, default=1.0, help="Peak adversarial loss weight")
+    p.add_argument("--lambda-semd", type=float, default=0.0,
+                   help="Weight on the SEMD geometric loss. Default 0.0 = OFF, which leaves "
+                        "the loss identical to before this term existed. val_semd is logged "
+                        "either way. Only enable after the metric is shown to correlate with "
+                        "tagging efficiency (see semd_correlation.py)")
+    p.add_argument("--semd-topk", type=int, default=128,
+                   help="Brightest pixels kept per image for SEMD (paper benchmarks use N=125)")
+    p.add_argument("--semd-omega-R", type=float, default=1.0,
+                   help="Angular scale at which SR/HR energy imbalance is deposited")
+    p.add_argument("--semd-beta", type=float, default=1.0,
+                   help="SEMD ground-metric exponent: omega_ij = dist_ij ** beta")
+    p.add_argument("--semd-loss-raw", action="store_true",
+                   help="Use UNNORMALIZED SEMD in the loss. Off by default because raw SEMD "
+                        "is ~1e8 on this data vs ~2 for L1, so a plausible-looking lambda "
+                        "would silently make SEMD the entire objective. Normalized by "
+                        "E_tot_HR^2, lambda behaves like the other lambdas")
     p.add_argument("--l1-weighting", type=str, default="energy", choices=["uniform", "energy"],
                    help="Up-weight bright HR pixels in L1 to prevent the 'predict small' collapse")
     p.add_argument("--l1-weight-alpha", type=float, default=5.0,
@@ -246,7 +263,7 @@ def train(args: argparse.Namespace) -> None:
     for epoch in range(start_epoch, args.epochs + 1):
         generator.train()
         discriminator.train()
-        g_run = d_run = l1_run = phys_run = resp_run = 0.0
+        g_run = d_run = l1_run = phys_run = resp_run = semd_run = 0.0
         last_d = 0.0
         seen = 0
         d_updates = 0
@@ -295,6 +312,18 @@ def train(args: argparse.Namespace) -> None:
             l1 = weighted_l1_loss(fake, hr, weighting=args.l1_weighting, alpha=args.l1_weight_alpha)
             phys = physics_loss(fake_raw, hr_raw, formulation=args.physics_loss_type)
             g_loss = args.lambda_l1 * l1 + args.lambda_physics * phys
+            # Geometric term, OFF by default (lambda_semd=0.0). Guarded rather
+            # than multiplied by zero so a disabled run pays none of its cost
+            # and the loss is bit-for-bit what it was before this term existed.
+            semd_val = 0.0
+            if args.lambda_semd > 0.0:
+                semd = semd_loss(
+                    fake_raw, hr_raw, topk=args.semd_topk,
+                    omega_R=args.semd_omega_R, beta=args.semd_beta,
+                    normalize_by_energy=not args.semd_loss_raw,
+                )
+                g_loss = g_loss + args.lambda_semd * semd
+                semd_val = semd.item()
             if adv_active:
                 fake_logits_g = discriminator(lr, fake)
                 adv = generator_adv_loss(fake_logits_g)
@@ -313,6 +342,7 @@ def train(args: argparse.Namespace) -> None:
             l1_run += l1_val * bs
             phys_run += phys_val * bs
             resp_run += energy_response(fake_raw, hr_raw).mean().item() * bs
+            semd_run += semd_val * bs
 
             # Per-step logging so W&B curves populate within seconds instead of
             # waiting a full epoch (one epoch over the full stream is very long).
@@ -338,12 +368,16 @@ def train(args: argparse.Namespace) -> None:
             "train_l1": l1_run / denom,
             "train_phys": phys_run / denom,
             "train_response": resp_run / denom,
+            "train_semd": semd_run / denom,
             "adv_weight": adv_w,
             "d_skip_frac": d_skip_frac,
             "d_input_noise": noise_std,
             "lr_skip_alpha": generator.lr_skip_alpha.item(),
         }
-        val_metrics = evaluate(generator, val_loader, stats, env.device, max_batches=args.max_val_batches)
+        val_metrics = evaluate(
+            generator, val_loader, stats, env.device, max_batches=args.max_val_batches,
+            semd_topk=args.semd_topk, semd_omega_R=args.semd_omega_R, semd_beta=args.semd_beta,
+        )
         record = {**train_metrics, **{f"val_{k}": v for k, v in val_metrics.items()}}
 
         # Per-epoch tagging efficiency with the frozen tagger (parquet only).
@@ -371,6 +405,7 @@ def train(args: argparse.Namespace) -> None:
             f"resp={record['val_energy_response']:.3f} "
             f"phys_ratio={record['val_phys_loss_ratio']:.4f} phys_l2={record['val_phys_loss_l2']:.4f} "
             f"peak={record['val_peak_ratio']:.3f} nz={record['val_nonzero_ratio']:.3f} "
+            f"semd={record['val_semd']:.3g} "
             f"advw={adv_w:.2f} dskip={d_skip_frac:.2f} alpha={record['lr_skip_alpha']:.3f}"
         )
         with paths.metrics_jsonl.open("a", encoding="utf-8") as f:

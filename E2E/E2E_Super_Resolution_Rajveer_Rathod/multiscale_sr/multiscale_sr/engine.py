@@ -9,6 +9,12 @@ Loss (matches the SRGAN baseline):
     L_D   = 0.5 * mean[(D(real) - real_label)^2 + D(fake)^2]
     L_l1  = mean|G(lr) - hr|                              (normalized tensors)
     L_phys= see `physics_loss` — selectable "ratio" or "l2" formulation (denormalized tensors)
+    L_semd= mean SEMD(G(lr), hr)                          (denormalized; OFF by default)
+
+``L_semd`` is an *optional* geometric term (lambda_semd, default 0.0). With the
+default the loss above is unchanged bit-for-bit. See ``spectral.py`` for why a
+geometric term is needed at all: every other physics quantity here is invariant
+under pixel permutation.
 """
 from __future__ import annotations
 
@@ -21,6 +27,7 @@ import torch.nn.functional as F
 from torch import Tensor, nn
 
 from .data.normalization import ChannelStats, denormalize, normalize
+from .spectral import semd_images
 
 
 # --------------------------------------------------------------------------- #
@@ -85,6 +92,41 @@ def physics_loss(
     if formulation == "l2":
         return physics_loss_l2(pred_raw, target_raw)
     raise ValueError(f"formulation must be 'ratio' or 'l2', got {formulation!r}")
+
+
+def semd_loss(
+    pred_raw: Tensor,
+    target_raw: Tensor,
+    topk: int = 128,
+    omega_R: float = 1.0,
+    beta: float = 1.0,
+    threshold: float = 0.0,
+    normalize_by_energy: bool = True,
+) -> Tensor:
+    """Mean SEMD (top-K pixel approximation) between SR and HR raw energies.
+
+    The only geometry-aware term available to this pipeline: unlike
+    ``physics_loss``/``peak_metrics``, permuting the prediction's pixels changes
+    this value. See ``spectral.semd_images`` for the image adaptation and its
+    caveats. Differentiable end to end, including the sort.
+
+    ``normalize_by_energy`` divides each sample by ``E_tot_HR^2``, which is the
+    natural scale of the spectral function (Eq. 2.1 integrates to ``E_tot^2``).
+    **This matters a great deal in practice.** Raw SEMD carries units of
+    ``energy^2 * length^(2*beta)`` and measures ~1e8 on this data, against ~2 for
+    the L1 term — so an innocuous-looking ``--lambda-semd 0.01`` silently makes
+    SEMD 99.999% of the generator loss. Normalized, it lands within about an
+    order of magnitude of the other terms, so lambda behaves like the other
+    lambdas. Raw values are still what ``classification_eval.py`` reports as a
+    *metric*; this rescaling exists for the loss only.
+    """
+    d = semd_images(
+        pred_raw, target_raw, topk=topk, omega_R=omega_R, beta=beta, threshold=threshold
+    )
+    if normalize_by_energy:
+        e_tot = target_raw.sum(dim=(1, 2, 3))
+        d = d / (e_tot ** 2).clamp_min(1e-6)
+    return d.mean()
 
 
 def weighted_l1_loss(
@@ -153,12 +195,20 @@ def evaluate(
     stats: ChannelStats,
     device: torch.device,
     max_batches: int | None = None,
+    semd_topk: int = 128,
+    semd_omega_R: float = 1.0,
+    semd_beta: float = 1.0,
 ) -> dict[str, float]:
-    """Compute val L1 (normalized), PSNR (normalized), and energy response.
+    """Compute val L1 (normalized), PSNR (normalized), energy response, and SEMD.
 
     Both physics-loss formulations (`phys_loss_ratio`, `phys_loss_l2`) are always
     reported regardless of which one trained the checkpoint, so a single run
     yields comparison data for both — see engine.physics_loss_ratio/_l2.
+
+    ``semd`` is likewise computed unconditionally — including in runs that do
+    not optimize it (``--lambda-semd 0.0``) — so that correlation data against
+    tagging efficiency accumulates from every run rather than only from
+    SEMD-enabled ones.
     """
     generator.eval()
     l1_sum = 0.0
@@ -169,6 +219,7 @@ def evaluate(
     phys_l2_sum = 0.0
     peak_sum = 0.0
     nonzero_sum = 0.0
+    semd_sum = 0.0
     n_batches = 0
 
     for batch in loader:
@@ -190,6 +241,10 @@ def evaluate(
         peak_sum += pk["peak_ratio"]
         nonzero_sum += pk["nonzero_ratio"]
 
+        semd_sum += semd_images(
+            fake_raw, hr_raw, topk=semd_topk, omega_R=semd_omega_R, beta=semd_beta
+        ).mean().item()
+
         n_batches += 1
         if max_batches is not None and n_batches >= max_batches:
             break
@@ -203,6 +258,7 @@ def evaluate(
         "phys_loss_l2": phys_l2_sum / n,
         "peak_ratio": peak_sum / n,
         "nonzero_ratio": nonzero_sum / n,
+        "semd": semd_sum / n,
     }
 
 
