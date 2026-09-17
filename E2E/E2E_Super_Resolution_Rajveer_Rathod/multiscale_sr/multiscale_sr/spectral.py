@@ -250,6 +250,30 @@ def _self_term(omega_sorted: Tensor, weights_sorted: Tensor) -> Tensor:
     return (weights_sorted * omega_sorted ** 2).sum(dim=1)
 
 
+def _spectral_cross(w_a: Tensor, wt_a: Tensor, w_b: Tensor, wt_b: Tensor) -> Tensor:
+    """Integrate B's step function over each mass interval of A.
+
+    Equivalent to summing every pairwise interval overlap, but with O(M)
+    storage and O(M log M) search instead of an O(M**2) dense matrix.
+    Gradients flow through interval endpoints and integrals (piecewise smooth;
+    at tied endpoints the choice of subgradient may differ from min/max).
+    """
+    sp_a = wt_a.cumsum(1)
+    sp_b = wt_b.cumsum(1)
+    zero = torch.zeros_like(sp_b[:, :1])
+    edges_b = torch.cat((zero, sp_b), dim=1)
+    integrals_b = torch.cat((zero, (wt_b * w_b).cumsum(1)), dim=1)
+
+    def integral(t: Tensor) -> Tensor:
+        # The terminal interval has slope zero: the integral is constant past B.
+        idx = torch.searchsorted(sp_b.contiguous(), t.contiguous(), right=True)
+        slopes = torch.cat((w_b, zero), dim=1).gather(1, idx)
+        return integrals_b.gather(1, idx) + (t - edges_b.gather(1, idx)) * slopes
+
+    sm_a = torch.cat((torch.zeros_like(sp_a[:, :1]), sp_a[:, :-1]), dim=1)
+    return (w_a * (integral(sp_a) - integral(sm_a))).sum(1)
+
+
 def semd_p2(
     energies_a: Tensor,
     coords_a: Tensor,
@@ -280,9 +304,8 @@ def semd_p2(
     zeroes all but an ``O(N^2)``-sized band of terms (the two sorted cumulative
     ladders only overlap locally), which is the observation the paper's
     ``O(N^2 log N)`` scaling rests on. This implementation materializes the full
-    band matrix for clarity and batching; with the default ``topk=128`` that is
-    ``(128*128)^2`` entries per sample, so it is evaluated in chunks over the
-    batch by :func:`semd_images`.
+    overlap integral using cumulative sums and searches, without materializing
+    the dense matrix. Storage is O(N**2), including for the backward pass.
     """
     omega_a = pairwise_omega(coords_a, beta, periodic_phi, phi_period)
     omega_b = pairwise_omega(coords_b, beta, periodic_phi, phi_period)
@@ -290,21 +313,19 @@ def semd_p2(
     w_a, wt_a = spectral_function(energies_a, omega_a)
     w_b, wt_b = spectral_function(energies_b, omega_b)
 
+    # Accumulate in double precision on CPU/CUDA to limit cancellation between
+    # large self/cross terms. MPS has no float64 support.
+    output_dtype = w_a.dtype
+    if w_a.device.type != "mps":
+        w_a, wt_a, w_b, wt_b = [x.double() for x in (w_a, wt_a, w_b, wt_b)]
     self_a = _self_term(w_a, wt_a)
     self_b = _self_term(w_b, wt_b)
 
-    sm_a, sp_a = cumulative_spectral(wt_a)
-    sm_b, sp_b = cumulative_spectral(wt_b)
-
-    # S_nl = min(S_A^+, S_B^+) - max(S_A^-, S_B^-)   (Eq. 2.16)
-    overlap = torch.minimum(sp_a.unsqueeze(2), sp_b.unsqueeze(1)) - torch.maximum(
-        sm_a.unsqueeze(2), sm_b.unsqueeze(1)
-    )
-    cross = (w_a.unsqueeze(2) * w_b.unsqueeze(1) * torch.relu(overlap)).sum(dim=(1, 2))
+    cross = _spectral_cross(w_a, wt_a, w_b, wt_b)
 
     # Clamp at zero: the closed form is non-negative analytically, but float32
     # cancellation between three large, nearly-equal terms can land a hair below.
-    return (self_a + self_b - 2.0 * cross).clamp_min(0.0)
+    return (self_a + self_b - 2.0 * cross).clamp_min(0.0).to(output_dtype)
 
 
 def _balance(
@@ -359,28 +380,24 @@ def semd_images(
         periodic_phi: wrap the phi (column) axis at the image width.
         chunk: samples per cross-term evaluation, bounding peak memory.
 
-            ``semd_p2``'s cross term materializes an ``(chunk, M, M)`` tensor
-            where ``M = (topk+1)**2`` (the *full* ``N x N`` outer product of
-            :func:`spectral_function`, not ``N`` itself) — so cost scales as
-            ``O(topk**4)``, not ``O(topk**2)``. At the default ``topk=128``,
-            ``M = 16641`` and a single ``(M, M)`` float32 tensor is already
-            ~1.1 GB *per sample in the chunk*, before the 2-3 same-shaped
-            intermediates the cross-term arithmetic needs. ``chunk=1`` is the
-            safe default for ``topk=128`` on commonly-available GPU memory
-            (~16-24 GB free); raise it only with topk lowered to match, or on
-            a GPU confirmed to have several tens of GB free for this call
-            alone. This is *not* a batch size in the usual sense — it is
-            reprocessed per validation batch, so raising both ``topk`` and
-            ``chunk`` compounds multiplicatively.
+            Cumulative integrals require O(chunk * (topk+1)**2) storage.
+            The old dense cross term required O(chunk * (topk+1)**4):
+            at topk=128 each intermediate used about 1.1 GB per sample.
+            Chunking still controls per-call overhead; top-K and the physical
+            definition of the metric are unchanged.
 
     Returns:
         ``(B,)`` per-sample distances, in units of ``energy^2 * length^(2*beta)``.
     """
+    if chunk < 1:
+        raise ValueError("chunk must be >= 1")
     if pred_raw.shape != target_raw.shape:
         raise ValueError(
             f"shape mismatch: pred {tuple(pred_raw.shape)} vs target {tuple(target_raw.shape)}"
         )
 
+    if pred_raw.shape[0] == 0:
+        return pred_raw.new_empty((0,))
     e_p, c_p, res_p = extract_particles(pred_raw, topk=topk, threshold=threshold)
     e_t, c_t, res_t = extract_particles(target_raw, topk=topk, threshold=threshold)
 

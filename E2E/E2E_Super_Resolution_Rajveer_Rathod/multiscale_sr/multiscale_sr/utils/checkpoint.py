@@ -11,7 +11,7 @@ def load_generator_state(generator: nn.Module, state_dict: dict) -> None:
     default (``lr_skip_alpha`` inits to 1.0, matching the old fixed-add behavior).
     """
     missing, unexpected = generator.load_state_dict(state_dict, strict=False)
+    if set(missing) - {"lr_skip_alpha"} or unexpected:
+        raise RuntimeError(f"Incompatible generator architecture: missing={missing}, unexpected={unexpected}")
     if missing:
         print(f"[ckpt] missing keys (using init defaults): {missing}")
-    if unexpected:
-        print(f"[ckpt] unexpected keys (ignored): {unexpected}")

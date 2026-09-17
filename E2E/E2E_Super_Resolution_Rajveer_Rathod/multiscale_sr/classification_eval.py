@@ -133,12 +133,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--semd-max-samples", type=int, default=1000,
                    help="Cap on images used for SEMD (it is O(K^2 log K) per image)")
     p.add_argument("--semd-chunk", type=int, default=1,
-                   help="Samples per SEMD cross-term evaluation. The cross term is "
-                        "O(topk**4) in memory (a (chunk, M, M) tensor with M=(topk+1)**2), "
-                        "so at the default --semd-topk=128 this is already ~1.1GB PER SAMPLE "
-                        "in the chunk before intermediates -- chunk=1 is the safe default. "
-                        "Raise only with --semd-topk lowered to match, or on a GPU confirmed "
-                        "to have several tens of GB free for this call alone.")
+                   help="Samples per SEMD call; cumulative-integral storage scales as chunk * (topk+1)**2")
     p.add_argument("--skip-per-source", action="store_true",
                    help="Only train the fixed-HR tagger (skip per-source taggers)")
     return p
@@ -637,8 +632,11 @@ def _load_or_train_hr_tagger(path_str: str | None, images, labels, device,
         return tagger, {"source": "trained-inline", "checkpoint": None}
 
     path = Path(path_str)
-    if path.exists():
-        blob = torch.load(path, map_location=device)
+    from multiscale_sr.recovery import verified_copies, publish_checkpoint
+    copies = verified_copies(path.parent / path.stem, "tagger")
+    readable_path = copies[0][1] if copies else path
+    if readable_path.exists():
+        blob = torch.load(readable_path, map_location="cpu", weights_only=True)
         cached_test = torch.as_tensor(blob["test_idx"])
         if not torch.equal(cached_test.cpu(), test_idx.cpu()):
             raise SystemExit(
@@ -655,7 +653,7 @@ def _load_or_train_hr_tagger(path_str: str | None, images, labels, device,
 
     tagger = train_tagger(images, labels, device, width=width, epochs=epochs, seed=seed)
     path.parent.mkdir(parents=True, exist_ok=True)
-    torch.save({
+    payload = {
         "tagger": tagger.state_dict(),
         "width": width,
         "in_channels": images.shape[1],
@@ -664,7 +662,12 @@ def _load_or_train_hr_tagger(path_str: str | None, images, labels, device,
         "epochs": epochs,
         "test_frac": test_frac,
         "n": n,
-    }, path)
+    }
+    import tempfile
+    with tempfile.TemporaryDirectory() as temporary:
+        local = Path(temporary) / "tagger.pt"
+        torch.save(payload, local)
+        publish_checkpoint(local, path.parent / path.stem, "tagger")
     print(f"[cls] trained and SAVED frozen HR tagger -> {path}")
     return tagger, {"source": "trained-and-saved", "checkpoint": str(path)}
 
@@ -678,8 +681,16 @@ def main() -> None:
     seed_everything(eval_seed)
     env = resolve_env()
     print(f"[env] {env}")
+    import atexit
+    from multiscale_sr.recovery import Diagnostics
+    diagnostic_dir = Path(args.out_dir) if args.out_dir else Path(args.checkpoint).parent.parent / "figures/classification"
+    diagnostic_dir.mkdir(parents=True, exist_ok=True)
+    diagnostics = Diagnostics(diagnostic_dir, env.device).start()
+    atexit.register(diagnostics.close)
+    diagnostics.phase("evaluation_checkpoint_load")
 
-    ckpt = torch.load(args.checkpoint, map_location=env.device)
+    # Optimizer states in the training checkpoint must not occupy eval GPU RAM.
+    ckpt = torch.load(args.checkpoint, map_location="cpu", weights_only=True)
     ckpt_args = ckpt.get("args", {})
     scale = args.scale or ckpt_args.get("scale")
     hr_size = args.hr_size or ckpt_args.get("hr_size", 125)
@@ -690,8 +701,10 @@ def main() -> None:
     gen = Generator(
         base_channels=ckpt_args.get("gen_channels", 64),
         num_blocks=ckpt_args.get("gen_blocks", 8),
+        lr_skip=not ckpt_args.get("no_lr_skip", False),
     ).to(env.device)
     load_generator_state(gen, ckpt["generator"])
+    del ckpt
 
     cache = Path(args.checkpoint).parent.parent / "normalization.json"
     if not cache.exists():
@@ -700,9 +713,11 @@ def main() -> None:
     test_loader, _ = get_dataloader(
         path=Path(args.data_dir), split="test", env=env, batch_size=args.batch_size,
         scale=scale, hr_size=hr_size, dataset_type=args.dataset_format,
+        use_native_lr=ckpt_args.get("use_native_lr", False),
         val_ratio=args.val_ratio, stats_cache_path=cache,
     )
 
+    diagnostics.phase("evaluation_materialization", max_samples=args.max_samples)
     print(f"[cls] materializing up to {args.max_samples} samples (scale={scale})...")
     try:
         data = collect_tagging_tensors(gen, test_loader, stats, env.device, max_samples=args.max_samples)
@@ -751,6 +766,7 @@ def main() -> None:
     # ---- Fixed HR tagger (frozen artifact if --tagger-checkpoint is given),
     # score every source. Without --tagger-checkpoint this trains inline exactly
     # as before the SEMD/eval-seed work landed.
+    diagnostics.phase("hr_tagger_training_or_load")
     hr_tagger, tagger_provenance = _load_or_train_hr_tagger(
         args.tagger_checkpoint, data["hr"][train_idx], y[train_idx], env.device,
         width=args.tagger_width, epochs=args.tagger_epochs, seed=tagger_seed, test_idx=test_idx,
@@ -844,6 +860,7 @@ def main() -> None:
     results["physics_correlation"] = physics
 
     # ---- SEMD: the geometry-aware metric (see spectral.py) ----
+    diagnostics.phase("evaluation_semd", topk=args.semd_topk, chunk=args.semd_chunk)
     print(f"[cls] computing SEMD (top-{args.semd_topk} pixel approximation)...")
     semd_sr = _semd_vs_hr(data["sr"], data["hr"], stats, args, env.device)
     semd_lr = _semd_vs_hr(data["lr"], data["hr"], stats, args, env.device)
@@ -887,6 +904,7 @@ def main() -> None:
 
     print(f"[cls] wrote {out_json}")
     print(f"[cls] figures + EXPLANATION.md -> {out_dir}")
+    diagnostics.close()
 
 
 if __name__ == "__main__":

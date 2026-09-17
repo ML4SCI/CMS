@@ -8,3 +8,4 @@ pyyaml
 wandb
 python-dotenv
 scikit-learn
+psutil

@@ -54,12 +54,20 @@ class WandbLogger:
     def log(self, metrics: dict[str, Any], step: int | None = None) -> None:
         if not self.enabled or self._run is None:
             return
-        self._wandb.log(metrics, step=step)
+        try:
+            self._wandb.log(metrics, step=step)
+        except Exception as exc:
+            print(f"[wandb] logging failed ({exc}); disabling remote logging.", flush=True)
+            self.enabled = False
 
     def log_image(self, key: str, image: np.ndarray, step: int | None = None, caption: str | None = None) -> None:
         if not self.enabled or self._run is None:
             return
-        self._wandb.log({key: self._wandb.Image(image, caption=caption)}, step=step)
+        try:
+            self._wandb.log({key: self._wandb.Image(image, caption=caption)}, step=step)
+        except Exception as exc:
+            print(f"[wandb] image logging failed ({exc}); disabling remote logging.", flush=True)
+            self.enabled = False
 
     def log_artifact(self, path: Path, name: str, type: str = "model", aliases: list[str] | None = None) -> None:
         if not self.enabled or self._run is None:
@@ -74,13 +82,21 @@ class WandbLogger:
     def set_summary(self, summary: dict[str, Any]) -> None:
         if not self.enabled or self._run is None:
             return
-        for k, v in summary.items():
-            self._run.summary[k] = v
+        try:
+            for k, v in summary.items():
+                self._run.summary[k] = v
+        except Exception as exc:
+            print(f"[wandb] summary logging failed ({exc}); local results remain available.", flush=True)
 
     def finish(self) -> None:
-        if not self.enabled or self._run is None:
+        if self._run is None:
             return
-        self._run.finish()
+        try:
+            self._run.finish()
+        except Exception as exc:
+            print(f"[wandb] finish failed ({exc}); local results remain available.", flush=True)
+        finally:
+            self._run = None
 
 
 def load_env(package_root: Path) -> None:

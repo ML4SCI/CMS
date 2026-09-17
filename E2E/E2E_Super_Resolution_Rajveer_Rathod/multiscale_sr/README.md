@@ -24,7 +24,7 @@ The central methodological contribution is a **classification-based evaluation**
 - **LR** — low-resolution input, produced by area-downsampling HR (see [Method](#method)).
 - **SR** — the generator's super-resolved output, i.e. its reconstruction of HR from LR.
 
-**"16×", "32×", "64×" name the LR resolution (LR is `scale × scale` pixels), not a reduction factor.** Read against a 128×128 HR, that is an **8× reduction** at scale 16, **4× reduction** at scale 32, and **2× reduction** at scale 64 (each dimension). This table is the unambiguous reference (see also [`ARCHITECTURE.md`](ARCHITECTURE.md)):
+**"16×", "32×", "64×" name the LR resolution (LR is `scale × scale` pixels), not a reduction factor.** Read against a 128×128 HR, that is an **8× reduction** at scale 16, **4× reduction** at scale 32, and **2× reduction** at scale 64 (each dimension). This table is the unambiguous reference (see also [`ARCHITECTURE.md`](docs/ARCHITECTURE.md)):
 
 | Label used elsewhere | LR resolution | Reduction factor (per dim) | Upscale path |
 |---:|---:|---:|---|
@@ -46,9 +46,9 @@ Latest runs, after the training-stability fix (seed 42, n_test = 1210, AUC_HR = 
 | 32×32 | 4× | 40 | 0.0757 | 0.822 | 0.669 | 0.474 | 0.501 | 75.0% | +13.8% | 0.25 |
 | **64×64** | **2×** | 40 | **0.0660** | **0.887** | 0.669 | 0.478 | **0.628** | **93.9%** | **+78.5%** | **0.64** |
 
-AUC_LR is the fixed HR-tagger's score on the raw (un-super-resolved) downsampled input at each scale — the baseline SR must beat to add value. (16× is reported directly in [`reports/multiscale_2026-07/REPORT.md`](reports/multiscale_2026-07/REPORT.md#5-taggability-the-physics-facing-metric); 32×/64× are back-solved from the reported efficiency/recovery/AUC_HR/AUC_SR figures via `AUC_LR = (AUC_SR − recovery·AUC_HR) / (1 − recovery)`, since the full report doesn't list them directly for those two scales — flagged here as a gap to close by reporting AUC_LR explicitly in future runs, per the mentor note on always showing baseline AUC alongside derived ratios.)
+AUC_LR is the fixed HR-tagger's score on the raw (un-super-resolved) downsampled input at each scale — the baseline SR must beat to add value. (16× is reported directly in [`reports/multiscale_2026-07/REPORT.md`](docs/reports/multiscale_2026-07/REPORT.md#5-taggability-the-physics-facing-metric); 32×/64× are back-solved from the reported efficiency/recovery/AUC_HR/AUC_SR figures via `AUC_LR = (AUC_SR − recovery·AUC_HR) / (1 − recovery)`, since the full report doesn't list them directly for those two scales — flagged here as a gap to close by reporting AUC_LR explicitly in future runs, per the mentor note on always showing baseline AUC alongside derived ratios.)
 
-**Caveat on AUC_HR itself:** the fixed HR tagger above is trained on a small held-out slice (~4,032 jets, ~2.9% of the ~139k available) by design — it's meant as a fast, consistent probe for the HR/LR/SR *relative* comparison, not a competitive absolute-AUC claim. A mentor review raised a published baseline around ~0.81 AUC on a comparable dataset; root-cause diagnosis and a reproduction recipe are in [`BASELINE_AUC_REPRODUCTION.md`](BASELINE_AUC_REPRODUCTION.md) — **not yet executed** (no PyTorch/pyarrow available in the environment this was written in). Treat AUC_HR/AUC_LR/AUC_SR above as internally consistent for comparing scales against each other, not yet validated against external published numbers.
+**Caveat on AUC_HR itself:** the fixed HR tagger above is trained on a small held-out slice (~4,032 jets, ~2.9% of the ~139k available) by design — it's meant as a fast, consistent probe for the HR/LR/SR *relative* comparison, not a competitive absolute-AUC claim. A mentor review raised a published baseline around ~0.81 AUC on a comparable dataset; root-cause diagnosis and a reproduction recipe are in [`BASELINE_AUC_REPRODUCTION.md`](docs/BASELINE_AUC_REPRODUCTION.md) — **not yet executed** (no PyTorch/pyarrow available in the environment this was written in). Treat AUC_HR/AUC_LR/AUC_SR above as internally consistent for comparing scales against each other, not yet validated against external published numbers.
 
 A longer **32× run at 60 epochs** does better still — val_L1 0.0741, peak_ratio 0.873, efficiency **80.2%**, recovery **+25.3%** — but was scored against a separate tagger instance, so it is reported in the ablation rather than mixed into this table.
 
@@ -72,9 +72,9 @@ Unlike taggability, the physics-conservation metrics are excellent everywhere:
 
 **SR beats bicubic on energy correlation at every scale and reproduces HR's pt–energy correlation to three decimals.** Note that 16× posts the *best* energy correlation of any scale while simultaneously being the worst on taggability — the contradiction that motivates the whole evaluation approach.
 
-Full evaluation, 32 figures across all three scales: [`reports/multiscale_2026-07/REPORT.md`](reports/multiscale_2026-07/REPORT.md).
+Full evaluation, 32 figures across all three scales: [`reports/multiscale_2026-07/REPORT.md`](docs/reports/multiscale_2026-07/REPORT.md).
 
-Earlier per-scale analysis with the full figure suite: [`reports/classification_eval/REPORT.md`](reports/classification_eval/REPORT.md).
+Earlier per-scale analysis with the full figure suite: [`reports/classification_eval/REPORT.md`](docs/reports/classification_eval/REPORT.md).
 
 ## Training stability — the failure that shaped the design
 
@@ -93,7 +93,7 @@ The fix is five coordinated changes: adversarial warmup and ramp, discriminator 
 
 Diagnostic: watch `d_skip_frac` in `metrics.jsonl` — sustained values near 1.0 mean the floor is too high for that scale.
 
-Full write-up: [`TRAINING_STABILITY.md`](TRAINING_STABILITY.md) · measured ablation: [`reports/multiscale_2026-07/REPORT.md`](reports/multiscale_2026-07/REPORT.md).
+Full write-up: [`TRAINING_STABILITY.md`](docs/TRAINING_STABILITY.md) · measured ablation: [`reports/multiscale_2026-07/REPORT.md`](docs/reports/multiscale_2026-07/REPORT.md).
 
 ## Method
 
@@ -117,11 +117,11 @@ L_l1  = mean|G(lr) − hr|                            (on normalized tensors)
 L_phys= mean|sum(E_pred)/sum(E_true) − 1|          (on denormalized energy)
 ```
 
-The L1 term is **energy-weighted** (`l1_weighting: energy`, `alpha: 5.0`) so high-deposit pixels dominate the reconstruction loss. Uniform L1 at λ=50 was the original cause of mode collapse — see [`TRAINING_STABILITY.md`](TRAINING_STABILITY.md).
+The L1 term is **energy-weighted** (`l1_weighting: energy`, `alpha: 5.0`) so high-deposit pixels dominate the reconstruction loss. Uniform L1 at λ=50 was the original cause of mode collapse — see [`TRAINING_STABILITY.md`](docs/TRAINING_STABILITY.md).
 
 Normalization is `log1p` + channel-wise z-score, with statistics computed once on **HR** and cached to `normalization.json` per run — HR is the common reference scale for every model regardless of input resolution.
 
-Design rationale, line-referenced against the source, is in [`ARCHITECTURE.md`](ARCHITECTURE.md).
+Design rationale, line-referenced against the source, is in [`ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ## Which script does what
 
@@ -187,7 +187,7 @@ python classification_eval.py \
 
 Step 3 prints the tagging efficiency and writes all nine figures to `experiments/<run>/figures/classification/`.
 
-**Per-scale `d_loss_floor` is not optional** — use **0.02** at 16×, **0.05** at 32× and 64×. The wrong value silently freezes the discriminator and degrades results while the loss curves still look healthy; see [`TRAINING_STABILITY.md`](TRAINING_STABILITY.md).
+**Per-scale `d_loss_floor` is not optional** — use **0.02** at 16×, **0.05** at 32× and 64×. The wrong value silently freezes the discriminator and degrades results while the loss curves still look healthy; see [`TRAINING_STABILITY.md`](docs/TRAINING_STABILITY.md).
 
 ## Repository layout
 
@@ -218,11 +218,15 @@ multiscale_sr/
 ├── tag_efficiency.py             # lightweight sibling (ROC + AUC bar only)
 ├── run_evaluations.py            # batch-evaluate every checkpoint, cross-run tables
 ├── configs/                      # scale_16 / scale_32 / scale_64 YAML
-├── ARCHITECTURE.md               # line-referenced design rationale
-├── TRAINING_STABILITY.md         # the mode-collapse failure and its fix
-├── POINT_CLOUD_EXPLORATION.md    # point-cloud representation: exploration + recommendation
-├── NORMALIZING_FLOWS_EXPLORATION.md # normalizing flows: exploration + recommendation
-├── BASELINE_AUC_REPRODUCTION.md  # diagnosis of the 0.698-vs-~0.81 tagger AUC gap
+├── README.md                    # project overview
+├── docs/                        # supporting documentation
+│   ├── ARCHITECTURE.md
+│   ├── TRAINING_STABILITY.md
+│   ├── POINT_CLOUD_EXPLORATION.md
+│   ├── NORMALIZING_FLOWS_EXPLORATION.md
+│   ├── BASELINE_AUC_REPRODUCTION.md
+│   ├── COLAB_RELIABILITY.md
+│   └── reports/                 # report Markdown, grouped by analysis
 ├── reports/
 │   ├── multiscale_2026-07/       # full evaluation: 32 figures, all 3 scales
 │   └── classification_eval/      # earlier per-scale figure suite
@@ -329,7 +333,7 @@ python classification_eval.py \
     --data-dir ../datasets
 ```
 
-Per-scale `d_loss_floor`: **0.02** at 16×, **0.05** at 32× and 64×. See [`TRAINING_STABILITY.md`](TRAINING_STABILITY.md) for why it differs.
+Per-scale `d_loss_floor`: **0.02** at 16×, **0.05** at 32× and 64×. See [`TRAINING_STABILITY.md`](docs/TRAINING_STABILITY.md) for why it differs.
 
 Training checkpoints and per-run artifacts are gitignored (they are large and reproducible); the curated figures and analysis are committed under `reports/`.
 
@@ -344,9 +348,9 @@ Open threads, in priority order:
 3. **Audit `psnr_norm` in `engine.py`** — see the note under Metrics.
 4. Progressive and stabilized training variants at 128-padded resolution are in progress.
 
-**Point-cloud representation** (raised in mentor review) was explored and is **not recommended before the project deadline** — it requires a parallel data/model/loss/eval pipeline rather than an extension of the current one. Full writeup: [`POINT_CLOUD_EXPLORATION.md`](POINT_CLOUD_EXPLORATION.md).
+**Point-cloud representation** (raised in mentor review) was explored and is **not recommended before the project deadline** — it requires a parallel data/model/loss/eval pipeline rather than an extension of the current one. Full writeup: [`POINT_CLOUD_EXPLORATION.md`](docs/POINT_CLOUD_EXPLORATION.md).
 
-**Normalizing flows** (raised in mentor review, alongside the physics-loss rework) were also explored: a full flow-based generator replacement is **not recommended before the deadline** (it discards the hard-won adversarial-training stability work for a from-scratch invertible architecture), but a small flow-based physics-consistency loss layered on the current GAN is a reasonable low-risk follow-up once the scalar physics loss (#2) is settled. Full writeup: [`NORMALIZING_FLOWS_EXPLORATION.md`](NORMALIZING_FLOWS_EXPLORATION.md).
+**Normalizing flows** (raised in mentor review, alongside the physics-loss rework) were also explored: a full flow-based generator replacement is **not recommended before the deadline** (it discards the hard-won adversarial-training stability work for a from-scratch invertible architecture), but a small flow-based physics-consistency loss layered on the current GAN is a reasonable low-risk follow-up once the scalar physics loss (#2) is settled. Full writeup: [`NORMALIZING_FLOWS_EXPLORATION.md`](docs/NORMALIZING_FLOWS_EXPLORATION.md).
 
 ## Presentation notes
 

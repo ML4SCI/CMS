@@ -253,7 +253,9 @@ def evaluate(
         if max_batches is not None and n_batches >= max_batches:
             break
 
-    n = max(n_batches, 1)
+    if not n_batches:
+        raise ValueError("Validation loader produced no samples")
+    n = n_batches
     return {
         "l1": l1_sum / max(pix_count, 1),
         "psnr_norm": psnr_sum / n,
@@ -298,6 +300,11 @@ def collect_tagging_tensors(
     seen = 0
 
     for batch in loader:
+        if max_samples is not None:
+            remaining = max_samples - seen
+            if remaining <= 0:
+                break
+            batch = {k: v[:remaining] for k, v in batch.items()}
         lr = normalize(batch["lr"].to(device), stats)
         hr = normalize(batch["hr"].to(device), stats)
         target_hw = hr.shape[-2:]

@@ -41,14 +41,21 @@ def resolve_env() -> EnvConfig:
 
     cpu_count = os.cpu_count() or 1
 
-    if torch.cuda.is_available():
+    device_override = os.environ.get("MULTISCALE_SR_DEVICE")
+    if device_override and device_override not in ("cpu", "cuda", "mps"):
+        raise ValueError("MULTISCALE_SR_DEVICE must be cpu, cuda or mps")
+    if device_override == "cuda" and not torch.cuda.is_available():
+        raise RuntimeError("CUDA explicitly requested but unavailable")
+    if device_override == "mps" and not torch.backends.mps.is_available():
+        raise RuntimeError("MPS explicitly requested but unavailable")
+    if torch.cuda.is_available() and device_override in (None, "cuda"):
         device = torch.device("cuda")
         # Containerised runtimes share /dev/shm; keep workers low to avoid OOM.
         num_workers = 2 if is_container else min(4, cpu_count)
         pin_memory = True
         use_amp = True
         dtype = torch.float16
-    elif torch.backends.mps.is_available():
+    elif torch.backends.mps.is_available() and device_override in (None, "mps"):
         # fork()+pyarrow deadlocks on macOS; use num_workers=0 and rely on
         # _WrappedPrefetchLoader's background thread for async I/O instead.
         device = torch.device("mps")
@@ -98,17 +105,40 @@ class _PrefetchIterator:
     _SENTINEL = object()
 
     def __init__(self, iterable, maxsize: int = 2) -> None:
-        self._iterable = iterable
+        self._iterable = iter(iterable)
         self._queue: queue.Queue = queue.Queue(maxsize=maxsize)
-        self._thread = threading.Thread(target=self._producer, daemon=True)
+        self._stop = threading.Event()
+        # Do not retain self in the thread: abandoned consumers must be collected.
+        self._thread = threading.Thread(target=self._producer,
+            args=(self._iterable, self._queue, self._stop), daemon=True)
         self._thread.start()
 
-    def _producer(self) -> None:
+    @staticmethod
+    def _producer(iterable, output, stop) -> None:
+        def put(item):
+            while not stop.is_set():
+                try:
+                    output.put(item, timeout=0.1)
+                    return
+                except queue.Full:
+                    pass
         try:
-            for item in self._iterable:
-                self._queue.put(item)
+            for item in iterable:
+                if stop.is_set():
+                    break
+                put((True, item))
+        except BaseException as exc:
+            put((False, exc))
         finally:
-            self._queue.put(self._SENTINEL)
+            put(_PrefetchIterator._SENTINEL)
+            if hasattr(iterable, "close"):
+                iterable.close()
+
+    def close(self):
+        self._stop.set()
+
+    def __del__(self):
+        self.close()
 
     def __iter__(self):
         return self
@@ -116,10 +146,15 @@ class _PrefetchIterator:
     def __next__(self):
         item = self._queue.get()
         if item is self._SENTINEL:
+            self.close()
             raise StopIteration
-        return item
+        ok, value = item
+        if not ok:
+            self.close()
+            raise value
+        return value
 
 
-def prefetch_generator(iterable, maxsize: int = 8) -> _PrefetchIterator:
-    """Wrap any iterable with background prefetch (queue depth 8)."""
+def prefetch_generator(iterable, maxsize: int = 2) -> _PrefetchIterator:
+    """Wrap any iterable with bounded, cancellable background prefetch."""
     return _PrefetchIterator(iterable, maxsize=maxsize)

@@ -29,7 +29,8 @@ from torch.utils.data import Dataset
 from .normalization import batch_to_tensor
 
 _PHYS_COLUMNS = ("X_jets_LR", "X_jets", "pt", "m0", "y")  # HR = column index 1
-_DECODE_BATCH = 512
+_DECODE_BATCH = 32  # Bound Arrow + decoded float buffers while building full cache.
+_CACHE_VERSION = 2  # Offset/dtype-aware Arrow decoding; reject earlier caches.
 
 
 def _manifest(files: Sequence[Path]) -> list[dict]:
@@ -59,11 +60,16 @@ def _cache_is_valid(cache_dir: Path, files: Sequence[Path]) -> bool:
         meta = json.loads(meta_path.read_text())
     except Exception:
         return False
-    if meta.get("manifest") != _manifest(files):
+    if meta.get("version") != _CACHE_VERSION or meta.get("manifest") != _manifest(files):
         return False
-    n, c, h, w = meta["n"], meta["c"], meta["h"], meta["w"]
-    expected_bytes = n * c * h * w * np.dtype(np.float32).itemsize
-    return hr_path.stat().st_size == expected_bytes
+    try:
+        n, c, h, w = (int(meta[k]) for k in ("n", "c", "h", "w"))
+        expected_bytes = n * c * h * w * np.dtype(np.float32).itemsize
+        with np.load(scal_path) as scalars:
+            valid_scalars = all(len(scalars[k]) == n for k in ("pt", "m0", "y"))
+        return min(n, c, h, w) > 0 and valid_scalars and hr_path.stat().st_size == expected_bytes
+    except (KeyError, OSError, ValueError, TypeError):
+        return False
 
 
 def build_hr_cache(files: Sequence[Path], cache_dir: Path) -> dict:
@@ -76,6 +82,9 @@ def build_hr_cache(files: Sequence[Path], cache_dir: Path) -> dict:
 
     files = list(files)
     cache_dir.mkdir(parents=True, exist_ok=True)
+    # Invalidate the commit marker BEFORE truncating any cache member. A crash
+    # must never make a partially populated mmap look like a valid old cache.
+    (cache_dir / "meta.json").unlink(missing_ok=True)
 
     # Pass 1 — exact sample count from metadata (cheap, no decode).
     n = sum(pq.ParquetFile(f).metadata.num_rows for f in files)
@@ -115,7 +124,7 @@ def build_hr_cache(files: Sequence[Path], cache_dir: Path) -> dict:
     hr_mm.flush()
     del hr_mm
     np.savez(cache_dir / "scalars.npz", pt=pt, m0=m0, y=y)
-    meta = {"n": n, "c": c, "h": h, "w": w, "manifest": _manifest(files)}
+    meta = {"version": _CACHE_VERSION, "n": n, "c": c, "h": h, "w": w, "manifest": _manifest(files)}
     (cache_dir / "meta.json").write_text(json.dumps(meta))
     print(f"[cache] built HR cache: {n} samples ({c},{h},{w}) -> {cache_dir}", flush=True)
     return meta

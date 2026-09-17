@@ -4,7 +4,7 @@
 
 ## Question
 
-The current pipeline represents every jet as a dense `(3, 128, 128)` image and runs it through a CNN generator/discriminator, even though calorimeter deposits are extremely sparse (**~97% zero pixels** — see the `weighted_l1_loss` docstring in [`multiscale_sr/engine.py`](multiscale_sr/engine.py)). Would representing a jet as a point cloud — a variable-length list of `(x, y, energy)` hits instead of a dense grid — be a better fit, and is it worth pursuing given the timeline (project completion ~Nov 3, evaluation ~Nov 10)?
+The current pipeline represents every jet as a dense `(3, 128, 128)` image and runs it through a CNN generator/discriminator, even though calorimeter deposits are extremely sparse (**~97% zero pixels** — see the `weighted_l1_loss` docstring in [`multiscale_sr/engine.py`](../multiscale_sr/engine.py)). Would representing a jet as a point cloud — a variable-length list of `(x, y, energy)` hits instead of a dense grid — be a better fit, and is it worth pursuing given the timeline (project completion ~Nov 3, evaluation ~Nov 10)?
 
 ## 1. Prior art in HEP
 
