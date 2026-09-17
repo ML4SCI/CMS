@@ -132,6 +132,13 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Raw-energy cut applied before top-K pixel selection")
     p.add_argument("--semd-max-samples", type=int, default=1000,
                    help="Cap on images used for SEMD (it is O(K^2 log K) per image)")
+    p.add_argument("--semd-chunk", type=int, default=1,
+                   help="Samples per SEMD cross-term evaluation. The cross term is "
+                        "O(topk**4) in memory (a (chunk, M, M) tensor with M=(topk+1)**2), "
+                        "so at the default --semd-topk=128 this is already ~1.1GB PER SAMPLE "
+                        "in the chunk before intermediates -- chunk=1 is the safe default. "
+                        "Raise only with --semd-topk lowered to match, or on a GPU confirmed "
+                        "to have several tens of GB free for this call alone.")
     p.add_argument("--skip-per-source", action="store_true",
                    help="Only train the fixed-HR tagger (skip per-source taggers)")
     return p
@@ -528,6 +535,7 @@ def _semd_vs_hr(images, hr_images, stats: ChannelStats, args, device) -> np.ndar
                 pred_raw, tgt_raw,
                 topk=args.semd_topk, threshold=args.semd_threshold,
                 beta=args.semd_beta, omega_R=args.semd_omega_R,
+                chunk=args.semd_chunk,
             ).detach().cpu().numpy()
         )
     return np.concatenate(out) if out else np.array([])

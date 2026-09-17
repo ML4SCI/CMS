@@ -339,7 +339,7 @@ def semd_images(
     beta: float = 1.0,
     omega_R: float = 1.0,
     periodic_phi: bool = False,
-    chunk: int = 8,
+    chunk: int = 1,
 ) -> Tensor:
     """SEMD (top-K pixel approximation) between two batches of raw-energy images.
 
@@ -358,6 +358,20 @@ def semd_images(
             carry equal energy by construction, while Eq. 2.7 assumes they do.
         periodic_phi: wrap the phi (column) axis at the image width.
         chunk: samples per cross-term evaluation, bounding peak memory.
+
+            ``semd_p2``'s cross term materializes an ``(chunk, M, M)`` tensor
+            where ``M = (topk+1)**2`` (the *full* ``N x N`` outer product of
+            :func:`spectral_function`, not ``N`` itself) — so cost scales as
+            ``O(topk**4)``, not ``O(topk**2)``. At the default ``topk=128``,
+            ``M = 16641`` and a single ``(M, M)`` float32 tensor is already
+            ~1.1 GB *per sample in the chunk*, before the 2-3 same-shaped
+            intermediates the cross-term arithmetic needs. ``chunk=1`` is the
+            safe default for ``topk=128`` on commonly-available GPU memory
+            (~16-24 GB free); raise it only with topk lowered to match, or on
+            a GPU confirmed to have several tens of GB free for this call
+            alone. This is *not* a batch size in the usual sense — it is
+            reprocessed per validation batch, so raising both ``topk`` and
+            ``chunk`` compounds multiplicatively.
 
     Returns:
         ``(B,)`` per-sample distances, in units of ``energy^2 * length^(2*beta)``.

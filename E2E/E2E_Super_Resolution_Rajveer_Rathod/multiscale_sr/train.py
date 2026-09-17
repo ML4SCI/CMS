@@ -83,6 +83,13 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Angular scale at which SR/HR energy imbalance is deposited")
     p.add_argument("--semd-beta", type=float, default=1.0,
                    help="SEMD ground-metric exponent: omega_ij = dist_ij ** beta")
+    p.add_argument("--semd-chunk", type=int, default=1,
+                   help="Samples per SEMD cross-term evaluation. The cross term is "
+                        "O(topk**4) in memory (a (chunk, M, M) tensor with M=(topk+1)**2), "
+                        "so at the default --semd-topk=128 this is already ~1.1GB PER SAMPLE "
+                        "in the chunk before intermediates -- chunk=1 is the safe default. "
+                        "Raise only with --semd-topk lowered to match, or on a GPU confirmed "
+                        "to have several tens of GB free for this call alone.")
     p.add_argument("--semd-loss-raw", action="store_true",
                    help="Use UNNORMALIZED SEMD in the loss. Off by default because raw SEMD "
                         "is ~1e8 on this data vs ~2 for L1, so a plausible-looking lambda "
@@ -321,6 +328,7 @@ def train(args: argparse.Namespace) -> None:
                     fake_raw, hr_raw, topk=args.semd_topk,
                     omega_R=args.semd_omega_R, beta=args.semd_beta,
                     normalize_by_energy=not args.semd_loss_raw,
+                    chunk=args.semd_chunk,
                 )
                 g_loss = g_loss + args.lambda_semd * semd
                 semd_val = semd.item()
@@ -377,6 +385,7 @@ def train(args: argparse.Namespace) -> None:
         val_metrics = evaluate(
             generator, val_loader, stats, env.device, max_batches=args.max_val_batches,
             semd_topk=args.semd_topk, semd_omega_R=args.semd_omega_R, semd_beta=args.semd_beta,
+            semd_chunk=args.semd_chunk,
         )
         record = {**train_metrics, **{f"val_{k}": v for k, v in val_metrics.items()}}
 
