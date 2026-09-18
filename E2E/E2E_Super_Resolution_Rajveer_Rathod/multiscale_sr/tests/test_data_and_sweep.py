@@ -55,6 +55,52 @@ def test_cache_interruption_and_source_change(tmp_path, monkeypatch):
         split_files([path], .33)
 
 
+def test_cache_build_flushes_incrementally_and_matches_source(tmp_path, monkeypatch):
+    """Dirty memmap pages are written back during the build, not only at the end.
+
+    A full-dataset build is ~15.8GB; letting every page stay dirty until the
+    final flush lets the host OOM-kill the container mid-build (the Colab
+    runtime disconnects with no traceback). Flushing periodically bounds
+    resident dirty pages. The cache contents must be byte-identical either
+    way, since the dataset fingerprint depends on them.
+    """
+    import multiscale_sr.data.cache as cache
+
+    path = tmp_path / "data.parquet"
+    make_parquet(path, n=16, side=8)
+
+    # Force a flush every sample so the periodic path is exercised on a small
+    # fixture; the production threshold is byte-based (_FLUSH_BYTES).
+    monkeypatch.setattr(cache, "_FLUSH_BYTES", 1)
+    monkeypatch.setattr(cache, "_DECODE_BATCH", 4)
+
+    flushes = []
+    original_memmap = cache.np.memmap
+
+    class CountingMemmap(original_memmap):
+        def flush(self, *a, **kw):
+            flushes.append(1)
+            return super().flush(*a, **kw)
+
+    monkeypatch.setattr(cache.np, "memmap", CountingMemmap)
+    meta = ensure_hr_cache([path], tmp_path / "cache")
+    monkeypatch.undo()
+
+    # 16 samples / batch 4 = 4 in-loop flushes, plus the final one.
+    assert len(flushes) > 1, "expected incremental flushes during the fill loop"
+    assert _cache_is_valid(tmp_path / "cache", [path])
+
+    # Contents must equal the decoded source exactly.
+    expected = batch_to_tensor(
+        pq.read_table(path, columns=["X_jets"]).column(0)
+    ).numpy()
+    actual = np.memmap(
+        tmp_path / "cache" / "hr.dat", dtype=np.float32, mode="r",
+        shape=(meta["n"], meta["c"], meta["h"], meta["w"]),
+    )
+    np.testing.assert_array_equal(np.asarray(actual), expected)
+
+
 def test_full_sweep_cli_smoke(tmp_path):
     """Real subprocesses: parquet -> training -> eval -> verified reuse."""
     data = tmp_path / "data"

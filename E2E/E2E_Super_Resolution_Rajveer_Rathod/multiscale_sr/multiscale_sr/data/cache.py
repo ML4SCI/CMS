@@ -31,6 +31,15 @@ from .normalization import batch_to_tensor
 _PHYS_COLUMNS = ("X_jets_LR", "X_jets", "pt", "m0", "y")  # HR = column index 1
 _DECODE_BATCH = 32  # Bound Arrow + decoded float buffers while building full cache.
 _CACHE_VERSION = 2  # Offset/dtype-aware Arrow decoding; reject earlier caches.
+# Flush the memmap every N bytes written. Pages written to a mode="w+" memmap
+# stay dirty in the page cache until flushed, and on a container runtime those
+# dirty pages count against the memory cgroup — a full-dataset build (~15.8GB
+# for 84k jets) can therefore be OOM-killed by the host before pass 2 ends,
+# taking the whole VM with it and leaving no Python traceback. Flushing
+# periodically bounds resident dirty pages instead of letting them grow to the
+# size of the cache. Cache *contents* are unchanged, so this does not affect
+# the dataset fingerprint or invalidate existing runs.
+_FLUSH_BYTES = 512 * 1024 * 1024
 
 
 def _manifest(files: Sequence[Path]) -> list[dict]:
@@ -103,7 +112,10 @@ def build_hr_cache(files: Sequence[Path], cache_dir: Path) -> dict:
     y = np.empty(n, dtype=np.int64)
 
     # Pass 2 — decode and fill.
+    sample_bytes = c * h * w * np.dtype(np.float32).itemsize
+    flush_every = max(1, _FLUSH_BYTES // max(1, sample_bytes))
     off = 0
+    unflushed = 0
     for fi, f in enumerate(files, start=1):
         pf = pq.ParquetFile(f)
         for batch in pf.iter_batches(
@@ -116,6 +128,11 @@ def build_hr_cache(files: Sequence[Path], cache_dir: Path) -> dict:
             m0[off : off + b] = np.asarray(batch.column(3).to_pylist(), dtype=np.float32)
             y[off : off + b] = np.asarray(batch.column(4).to_pylist(), dtype=np.int64)
             off += b
+            unflushed += b
+            # Write back dirty pages before they accumulate to cache size.
+            if unflushed >= flush_every:
+                hr_mm.flush()
+                unflushed = 0
         print(f"[cache] decoded {off}/{n} samples ({fi}/{len(files)} files)", flush=True)
 
     if off != n:
