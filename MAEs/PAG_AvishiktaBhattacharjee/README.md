@@ -156,50 +156,12 @@ Flags:
 
 The scripts pass the dataset normalisation to the model, so the gate sees GeV, and they print `Best model saved to: ...` at the end of training. ROOT-file runs still use DDP across all visible GPUs.
 
-## Running on NERSC (Slurm)
 
-Submit the whole pipeline with one command from the project root on a login node. Each stage waits until the previous one has finished successfully and picks up its model by job id; if a stage fails, the stages after it are cancelled automatically:
 
-```bash
-bash jobs/run_all_PAG_LorentzParT.sh     # pretrain -> evaluate; train_PAG and train_PAunG -> their evaluations
-bash jobs/run_all_PAG_ParT.sh            # the same chain for ParticleTransformer
-```
 
-Add a job id (`bash jobs/run_all_PAG_LorentzParT.sh <jobid>`) to chain onto a pretraining job that is already queued.
 
-The individual batch scripts can also be submitted by hand:
 
-| Job script | Stage |
-|---|---|
-| `jobs/pretrain_PAG_LorentzParT.sh` | masked pretraining |
-| `jobs/train_PAG_LorentzParT.sh <model or job id>` | gated classifier |
-| `jobs/train_PAunG_LorentzParT.sh <model or job id>` | ungated classifier |
-| `jobs/evaluate_PAG_LorentzParT.sh <model or job id> [config]` | evaluation + plots |
-| `jobs/evaluate_PAunG_LorentzParT.sh <model or job id>` | evaluation + plots |
-| `jobs/*_PAG_ParT.sh` | the same stages for `ParticleTransformer` |
-
-All jobs ask for one GPU in the `shared` queue, which usually starts much sooner than `regular`. The account is set with `#SBATCH -A` at the top of each script. Job output goes to `logs/slurm-<job name>-<job id>.out`, so `logs/` must exist before submitting.
-
-```bash
-squeue --me                                                   # what is queued or running
-sacct -X --starttime now-2days --format=JobID,JobName%30,State,Elapsed
-grep -h "test_loss" logs/slurm-evaluate_*.out                 # results once the evaluations finish
-```
-
-## Results
-
-The first full run is included in this repository: seed 42, the balanced 1M-jet JetClass subset, 20 epochs per stage, one A100 on Perlmutter (pretraining took about 4 hours).
-
-| Run | Test accuracy | Test loss | Macro-average AUC |
-|---|---|---|---|
-| PAG — gate on | 0.6957 | 0.8582 | 0.952 |
-| PAunG — gate off | 0.6991 | 0.8519 | 0.953 |
-
-Masked-particle reconstruction on the test split after pretraining: loss 0.2923 (pT 0.399, η 0.113, φ 0.023, E 0.635).
-
-On this single seed the gate is within noise of the ungated baseline, so it neither helped nor hurt; averaging over several seeds is the next step. Both classifiers are about five points above the notebook this work started from, which comes from the normalisation fixes rather than from the gate.
-
-The files behind those numbers:
+##Results
 
 ```
 logs/
@@ -220,16 +182,6 @@ plots/
 ├── PAunG/LorentzParT/...
 └── ParticleTransformer/...
 ```
-
-On NERSC the PNGs can be viewed directly in the file browser at https://jupyter.nersc.gov, or copied over with `scp -r <user>@perlmutter.nersc.gov:~/PAG_AvishiktaBhattacharjee/plots .`. Model weights (`*.pt`) are not kept in git.
-
-## Testing
-
-```bash
-python -m pytest tests/ -v
-```
-
-`tests/test_PAG.py` covers the gating: the gate is an exact identity at initialisation, the normalisation round-trips, the gate receives physical jet masses, the mass encoder separates m_W from m_Z, gradients reach the gate and the mass branch, pretrained gate weights load into the classifier, and the plots land in `plots/<model>/`. One test in `tests/test_trainer.py` needs a CUDA GPU and fails on a CPU-only machine.
 
 ## Project Structure
 
