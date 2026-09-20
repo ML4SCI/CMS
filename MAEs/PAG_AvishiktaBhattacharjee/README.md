@@ -84,7 +84,7 @@ The classifier head compares L2-normalised features with L2-normalised class wei
 
 The runs use a balanced JetClass subset stored as a single `.npz` archive with `X_particles` of shape `(num_jets, 4, 128)` and one-hot `Y`; per-particle features are `[pT, eta, phi, energy]`. `--npz-path` loads it and splits it 80/10/10, stratified with a fixed seed, and computes the normalisation from the training split (`src/utils/data/npz.py`). On NERSC the jobs read it from the path in `NPZ_PATH` at the top of each `jobs/*_PAG_*.sh`.
 
-The original ROOT-file workflow still works through `--train-data-dir` / `--val-data-dir` / `--test-data-dir`, with the files under `./data/` as in the upstream project. JetClass is publicly available: https://zenodo.org/records/6619768
+The scripts also still read the original JetClass ROOT files through `--train-data-dir` / `--val-data-dir` / `--test-data-dir`, with the files under `./data/`; that path needs a config of its own, since only the PAG/PAunG configs are kept here. JetClass is publicly available: https://zenodo.org/records/6619768
 
 ## Configuration
 
@@ -119,7 +119,6 @@ train:
 | `train_PAG_LorentzParT.yaml` | classification, gate on |
 | `train_PAunG_LorentzParT.yaml` | classification, gate off (the comparison run) |
 | `pretrain_PAG_ParT.yaml`, `train_PAG_ParT.yaml` | the same two stages for `ParticleTransformer` |
-| `pretrain_*.yaml`, `train_*.yaml` (no PAG) | the upstream ungated ROOT-file setup |
 
 A typo inside `attention` raises an error instead of silently disabling the gate.
 
@@ -153,7 +152,7 @@ Flags:
 - `--weights`: pretrained model to fine-tune from; overrides `model.weights`. Only the `encoder.*` tensors are taken, and what did not match is reported.
 - `--best-model-path`: the model to evaluate.
 - `--checkpoint-path`: resume training from a trainer checkpoint.
-- `--seed`, `--train-data-dir`, `--val-data-dir`, `--test-data-dir` as in the upstream scripts.
+- `--seed`, `--train-data-dir`, `--val-data-dir`, `--test-data-dir` for the ROOT-file workflow.
 
 The scripts pass the dataset normalisation to the model, so the gate sees GeV, and they print `Best model saved to: ...` at the end of training. ROOT-file runs still use DDP across all visible GPUs.
 
@@ -179,7 +178,7 @@ The individual batch scripts can also be submitted by hand:
 | `jobs/evaluate_PAunG_LorentzParT.sh <model or job id>` | evaluation + plots |
 | `jobs/*_PAG_ParT.sh` | the same stages for `ParticleTransformer` |
 
-All PAG jobs ask for one GPU in the `shared` queue, which usually starts much sooner than `regular`; the upstream ROOT-file jobs stay on 4 GPUs in `regular`. The account is set with `#SBATCH -A` at the top of each script. Job output goes to `logs/slurm-<job name>-<job id>.out`, so `logs/` must exist before submitting.
+All jobs ask for one GPU in the `shared` queue, which usually starts much sooner than `regular`. The account is set with `#SBATCH -A` at the top of each script. Job output goes to `logs/slurm-<job name>-<job id>.out`, so `logs/` must exist before submitting.
 
 ```bash
 squeue --me                                                   # what is queued or running
@@ -231,7 +230,7 @@ PAG_AvishiktaBhattacharjee/
 │   ├── optim/             # optimizer/scheduler registries
 │   └── utils/             # data, normalisation, metrics, plots, environment check
 ├── scripts/               # CLI: train/evaluate for each model
-├── configs/               # YAML experiments (PAG, PAunG, upstream)
+├── configs/               # YAML experiments (PAG, PAunG)
 ├── jobs/                  # Slurm batch scripts + run_all pipelines + setup_env
 ├── tests/                 # unit tests, including the gating tests
 ├── logs/                  # job output, checkpoints, CSV logs

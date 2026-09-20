@@ -19,7 +19,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Evaluate ParticleTransformer from YAML config")
 
     # Model and configurations arguments
-    parser.add_argument('--config-path', type=str, default='./configs/train_ParT.yaml', help="Path to YAML config")
+    parser.add_argument('--config-path', type=str, default='./configs/train_PAG_ParT.yaml', help="Path to YAML config")
     parser.add_argument('--best-model-path', type=str, default='./logs/ParticleTransformer/best/run_01.pt', help="Path to best model weights")
 
     # Data loading arguments

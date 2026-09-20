@@ -19,7 +19,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Evaluate LorentzParT from YAML config")
 
     # Model and configurations arguments
-    parser.add_argument('--config-path', type=str, default='./configs/train_LorentzParT.yaml', help="Path to YAML config")
+    parser.add_argument('--config-path', type=str, default='./configs/train_PAG_LorentzParT.yaml', help="Path to YAML config")
     parser.add_argument('--best-model-path', type=str, default='./logs/LorentzParT/best/run_01.pt', help="Path to best model weights")
 
     # Data loading arguments

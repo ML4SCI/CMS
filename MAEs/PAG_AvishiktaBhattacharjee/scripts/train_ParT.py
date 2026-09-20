@@ -24,7 +24,7 @@ def parse_args() -> argparse.Namespace:
 
     # Model and configurations arguments
     parser.add_argument('--seed', type=int, default=42, help="Random seed for reproducibility")
-    parser.add_argument('--config-path', type=str, default='./configs/train_ParT.yaml', help="Path to YAML config")
+    parser.add_argument('--config-path', type=str, default='./configs/train_PAG_ParT.yaml', help="Path to YAML config")
     parser.add_argument('--checkpoint-path', type=str, default=None, help="Checkpoint to restore trainer state")
     parser.add_argument('--weights', type=str, default=None, help="Pretrained weights to fine-tune from (overrides model.weights in the YAML)")
 
