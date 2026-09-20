@@ -6,8 +6,8 @@ Physics-Aware Gating (PAG) for Particle Transformers on the JetClass dataset: th
 
 A jet is a spray of particles, and a transformer over its constituents has no notion of which particles matter physically. PAG adds that notion: every attention block multiplies its attention output by a learned gate that is conditioned on physics quantities, so the model can damp or amplify each head according to the jet it is looking at.
 
-![Cutaway diagram of CMS detector (retrieved from https://cds.cern.ch/record/2665537/files/)](assets/pics/cms_160312_02.png)
-*Cutaway diagram of CMS detector (retrieved from https://cds.cern.ch/record/2665537/files/)*
+![End view of the CMS detector at CERN](assets/pics/cms_detector.jpg)
+*End view of the CMS detector at CERN, the experiment the JetClass simulation is modelled on*
 
 The repository runs three comparable tracks on the same data:
 
@@ -187,6 +187,19 @@ grep -h "test_loss" logs/slurm-evaluate_*.out                 # results once the
 ```
 
 ## Results
+
+The first full run is included in this repository: seed 42, the balanced 1M-jet JetClass subset, 20 epochs per stage, one A100 on Perlmutter (pretraining took about 4 hours).
+
+| Run | Test accuracy | Test loss | Macro-average AUC |
+|---|---|---|---|
+| PAG — gate on | 0.6957 | 0.8582 | 0.952 |
+| PAunG — gate off | 0.6991 | 0.8519 | 0.953 |
+
+Masked-particle reconstruction on the test split after pretraining: loss 0.2923 (pT 0.399, η 0.113, φ 0.023, E 0.635).
+
+On this single seed the gate is within noise of the ungated baseline, so it neither helped nor hurt; averaging over several seeds is the next step. Both classifiers are about five points above the notebook this work started from, which comes from the normalisation fixes rather than from the gate.
+
+The files behind those numbers:
 
 ```
 logs/
