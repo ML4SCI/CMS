@@ -11,3 +11,4 @@ data/*
 !data/.gitkeep
 docker/*
 venv/*
+.ipynb_checkpoints/
