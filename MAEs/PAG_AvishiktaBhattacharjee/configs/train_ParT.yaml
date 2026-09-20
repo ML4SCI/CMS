@@ -1,0 +1,62 @@
+model:
+    num_classes: 10
+    embed_dim: 128
+    num_heads: 8
+    num_layers: 8
+    num_cls_layers: 2
+    num_mlp_layers: 0
+    hidden_dim: 256
+    dropout: 0.1
+    expansion_factor: 4
+    max_num_particles: 128
+    num_particle_features: 4
+    pair_embed_dims: [64, 64, 64]
+    mask: False
+    weights: ./logs/ParticleTransformer/best/masked_43.pt
+    inference: False
+
+
+train:
+    batch_size: 1000  # must be divisible by 10
+    criterion:
+        # All supported loss functions can be found in 'src/loss/loss_registry.py'
+        name: 'cross_entropy_loss'
+        kwargs:
+            loss_coef: [0.25, 0.25, 0.25, 0.25]  # [pT, eta, phi, energy]
+            reduction: 'mean'  # 'mean', 'sum', 'none'
+    optimizer:
+        # All supported optimizers can be found in 'src/optim/optim_registry.py'
+        name: 'radam'
+        kwargs:
+            lr: 0.001
+            weight_decay: 0.0
+            betas: [0.95, 0.999]
+            eps: 0.00001  # only for 'radam'
+    optimizer_wrapper:
+        name: 'lookahead'
+        kwargs:
+            la_steps: 6
+            la_alpha: 0.5
+    scheduler:
+        # All supported schedulers can be found in 'src/optim/scheduler_registry.py'
+        name: 'exponential_lr'
+        kwargs:
+            gamma: 0.736
+    callbacks:
+        # All supported callbacks can be found in 'src/utils/callbacks.py'
+        - name: 'early_stopping'
+          kwargs:
+              monitor: 'val_loss'  # 'val_loss' or 'val_acc'
+              mode: 'min'  # 'min' or 'max'
+              patience: 5
+              min_delta: 0.001
+    num_epochs: 5
+    start_epoch: 0
+    logging_dir: 'logs'
+    logging_steps: 10000
+    progress_bar: False
+    save_best: True
+    save_ckpt: True
+    save_fig: True
+    num_workers: 8
+    pin_memory: True

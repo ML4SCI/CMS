@@ -1,0 +1,68 @@
+# Physics-Aware Gating (PAG): fine-tune the gated LorentzParT for jet classification.
+# Settings follow the fixed_normalisation_BPAG_LorentzParT notebook, with the gate kept ON so the
+# pretrained gate weights are loaded and trained (the notebook's fine-tuning had attention: {}).
+model:
+    num_classes: 10
+    embed_dim: 128
+    num_heads: 8
+    num_layers: 8
+    num_cls_layers: 2
+    num_mlp_layers: 0
+    hidden_dim: 256
+    hidden_mv_channels: 8
+    in_s_channels:
+    out_s_channels:
+    hidden_s_channels: 16
+    attention:
+        # Must match the pretraining config so the gate weights load
+        use_gating: True
+        gate_type: 'headwise'
+        use_mass_bias: True
+    mlp: {}
+    reinsert_mv_channels:
+    reinsert_s_channels:
+    dropout: 0.1
+    expansion_factor: 4
+    max_num_particles: 128
+    num_particle_features: 4
+    pair_embed_dims: [64, 64, 64]
+    mask: False
+    weights:   # gated pretraining checkpoint; pass it with --weights (logs/LorentzParT/best/<run>.pt)
+    inference: False
+
+
+train:
+    batch_size: 64  # with ROOT data on several GPUs it must be divisible by 10 * number of GPUs
+    criterion:
+        # All supported loss functions can be found in 'src/loss/loss_registry.py'
+        name: 'cross_entropy_loss'
+        kwargs:
+            reduction: 'mean'  # 'mean', 'sum', 'none'
+    optimizer:
+        # All supported optimizers can be found in 'src/optim/optim_registry.py'
+        name: 'adam'
+        kwargs:
+            lr: 0.0001
+    scheduler:
+        # All supported schedulers can be found in 'src/optim/scheduler_registry.py'
+        name: 'exponential_lr'
+        kwargs:
+            gamma: 0.95
+    callbacks:
+        # All supported callbacks can be found in 'src/utils/callbacks.py'
+        - name: 'early_stopping'
+          kwargs:
+              monitor: 'val_loss'  # 'val_loss' or 'val_acc'
+              mode: 'min'  # 'min' or 'max'
+              patience: 5
+    num_epochs: 20
+    start_epoch: 0
+    logging_dir: 'logs'
+    logging_steps: 1000
+    progress_bar: False
+    save_best: True
+    save_ckpt: True
+    save_fig: True
+    plots_dir: 'plots'  # PNG figures go to plots/<model name>/
+    num_workers: 0
+    pin_memory: True
