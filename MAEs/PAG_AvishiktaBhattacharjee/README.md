@@ -25,7 +25,7 @@ Core components:
 - Configs: YAML-driven experiments (`configs/`).
 - Jobs: Slurm batch scripts and one-command pipelines for NERSC Perlmutter (`jobs/`).
 
-This project builds on [Hybrid_Transformer_Thanh_Nguyen](../Hybrid_Transformer_Thanh_Nguyen) by Thanh Nguyen, which provides the `LorentzParT` model, the training engine and the JetClass utilities.
+
 
 ## Access the repository
 
