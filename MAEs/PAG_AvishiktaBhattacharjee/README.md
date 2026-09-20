@@ -58,13 +58,6 @@ source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### Copying the project to NERSC
-
-```bash
-scp -r PAG_AvishiktaBhattacharjee <user>@perlmutter.nersc.gov:~/
-```
-
-Submit every job from inside that folder; the jobs read their configs and write `logs/` and `plots/` relative to it.
 
 ## What the gate does
 
