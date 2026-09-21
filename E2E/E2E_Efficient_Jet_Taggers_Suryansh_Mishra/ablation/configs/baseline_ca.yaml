@@ -1,0 +1,27 @@
+# Baseline ParT + train-only Cambridge–Aachen coarsening.
+#
+# Architecture is identical to `baseline.yaml`. The only delta is a random-R
+# C/A merge on training jets (HERON §4 / J-JEPA R=0.2). Validation stays at
+# the original constituents.
+#
+# Launch as a *separate* run_name so it does not clobber `baseline`:
+#   ARM=baseline RUN_NAME=baseline_ca \
+#     CONFIG=ablation/configs/baseline_ca.yaml \
+#     sbatch ... ablation/slurm/train_arm.sh
+#
+# train_arm.sh overrides run_name from $RUN_NAME (default $ARM), so RUN_NAME
+# must be set — otherwise this writes into runs/baseline/.
+#
+# max_steps caps the screen at 200k so this file cannot accidentally launch
+# the full 1M recipe. The LR schedule still spans total_steps=1M, so steps are
+# directly comparable to the existing baseline at 150k / 175k / 200k.
+_base: baseline.yaml
+
+run_name: baseline_ca
+experiment: ca_augment
+
+ca_augment: true
+ca_augment_prob: 0.5
+ca_rmax: 0.2
+ca_min_particles: 2
+max_steps: 200000

@@ -1,0 +1,24 @@
+# Baseline ParT with the pairwise interaction bias switched OFF (T0.4 screen).
+#
+# `pair_embed_dims: null` is weaver's own switch: ParticleTransformer then
+# builds no PairEmbed and every encoder block attends on QK^T alone. This is
+# the T0.4 gate (HERON §0.1 / plan "cheap kills"): matched steps against the
+# existing `baseline` run — if val accuracy and rejection survive without the
+# pair bias, the pair pipeline (and N7/N8) is not load-bearing.
+#
+# use_part_kernels is off: with no PairEmbed there is nothing to fuse, and the
+# config should not silently depend on the kernel path. The launcher
+# (submit_t0.sh) exports USE_PART_KERNELS=false for this run so train_arm.sh's
+# default `--set use_part_kernels=true` does not override this.
+#
+# max_steps caps the screen at 200k so this file cannot accidentally launch
+# the full 1M recipe. The LR schedule still spans total_steps=1M, so steps are
+# directly comparable to the existing baseline at 150k / 175k / 200k.
+_base: baseline.yaml
+
+run_name: baseline_nopair
+experiment: t0_pair_off
+
+pair_embed_dims: null
+use_part_kernels: false
+max_steps: 200000
