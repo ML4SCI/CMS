@@ -1,0 +1,4 @@
+# file: /private/tmp/cms_upstream/E2E/E2E_Efficient_Jet_Taggers_Suryansh_Mishra/variants/lloca/attention.py
+# hypothesis_version: 6.141.1
+
+[-1000000000.0, 0.1, 1.0, 128, 'LLoCaAttentionBlock', 'bnij,bhnvj->bhnvi', 'head_metric']

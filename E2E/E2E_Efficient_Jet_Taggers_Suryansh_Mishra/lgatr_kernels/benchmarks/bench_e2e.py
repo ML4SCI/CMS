@@ -39,11 +39,9 @@ import subprocess
 import sys
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-#: ``variants`` and ``dataloader`` live inside the training package, not at the
-#: repo root. ROOT alone makes ``lgatr_kernels`` importable but not ``variants``
-#: — that broke when the kernel packages were lifted out of the training
-#: package, so workers need both entries.
-PKG_ROOT = os.path.join(ROOT, "ml4sci_26")
+#: In this repo layout the training package IS this directory (variants/,
+#: dataloader/, kernels all top-level), so workers just need ROOT on sys.path.
+PKG_ROOT = ROOT
 PYTHON = sys.executable
 BS = 128
 #: JetClass has 10 classes; the ragged loader emits ``y`` as ``(B, 10)``.

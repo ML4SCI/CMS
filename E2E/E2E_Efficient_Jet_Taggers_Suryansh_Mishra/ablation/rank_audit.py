@@ -1663,7 +1663,7 @@ def _load_model_from_checkpoint(payload: dict):
         # Same wrap as ablation/train.py `_apply_part_kernels`: the fused
         # PairEmbed dispatch is the code path that produced the trained
         # activations, so the audit must read the bias through it too.
-        from ml4sci_26.part_kernels import optimize_part_model
+        from part_kernels import optimize_part_model
 
         target = model.part if hasattr(model, "part") else model
         optimize_part_model(

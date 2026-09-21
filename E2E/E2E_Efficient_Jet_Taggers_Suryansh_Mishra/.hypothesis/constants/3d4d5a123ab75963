@@ -1,0 +1,4 @@
+# file: /private/tmp/cms_upstream/E2E/E2E_Efficient_Jet_Taggers_Suryansh_Mishra/part_kernels/runtime.py
+# hypothesis_version: 6.141.1
+
+[0.0, 1e-08, 1.0, '_orig_mod', '_part_kernels_patch', 'attention', 'attention_instances', 'attentions', 'attn', 'compile_mode', 'cpu-stub', 'device_dispatch', 'eps', 'forward', 'func', 'keywords', 'pair_embed', 'pair_embed_instances', 'pair_embeds', 'pairwise_fallbacks', 'pairwise_input_dim', 'pairwise_lv_dim', 'pairwise_lv_fts', 'params', 'patches', 'stats', 'triton']

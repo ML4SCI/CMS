@@ -1,0 +1,4 @@
+# file: /private/tmp/cms_upstream/E2E/E2E_Efficient_Jet_Taggers_Suryansh_Mishra/variants/lloca/part.py
+# hypothesis_version: 6.141.1
+
+[0.0, 1e-08, 0.005, 0.1, 2.0, 128, 512, 'LLoCaParT', 'fix_init', 'kin_norm_enabled', 'kin_offset', 'kin_scale']

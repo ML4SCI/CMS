@@ -109,7 +109,7 @@ def _part_kernel_target(model: torch.nn.Module) -> torch.nn.Module:
 def _apply_part_kernels(model: torch.nn.Module, config: AblationConfig, ctx) -> torch.nn.Module:
     if not config.use_part_kernels:
         return model
-    from ml4sci_26.part_kernels import optimize_part_model
+    from part_kernels import optimize_part_model
 
     target = _part_kernel_target(model)
     _, stats = optimize_part_model(

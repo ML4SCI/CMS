@@ -4,7 +4,7 @@ Fuses sign-flip (for queries) + reshape + concatenate for q/k/v into one kernel.
 Also provides the inverse split operation for the attention output.
 """
 
-import ml4sci_26.lgatr_kernels.triton as triton
+import triton
 import triton.language as tl
 import torch
 

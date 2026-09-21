@@ -1,0 +1,4 @@
+# file: /private/tmp/cms_upstream/E2E/E2E_Efficient_Jet_Taggers_Suryansh_Mishra/variants/lowrank/pair.py
+# hypothesis_version: 6.141.1
+
+[-1.0, 1e-12, 1e-08, 1e-06, 0.096, 1.0, 3.0, 4.0, 9.0, 128, 'LowRankPairEmbed', 'bhki,bhkj->bhij', 'cos_phi', 'eta', 'eta_sq', 'flop_reduction', 'ln_e', 'ln_pt', 'lowrank_cost_report', 'lowrank_mlp_flops', 'lowrank_params', 'lowrank_total_flops', 'mlp_evaluations_pair', 'num_heads', 'num_particles', 'pair_embed_params', 'pair_mlp_flops', 'particle_features', 'rank', 'sin_phi', 'speedup_delivered', 'speedup_note']
