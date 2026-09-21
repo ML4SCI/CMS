@@ -1,0 +1,4 @@
+# file: /private/tmp/cms_upstream/E2E/E2E_Efficient_Jet_Taggers_Suryansh_Mishra/variants/weaver_adapter.py
+# hypothesis_version: 6.141.1
+
+[0.0, 0.1, 2.0, 128, 192, 512, 'DEFAULT_MOE_PRESET', 'MOE_PRESETS', 'VARIANTS', 'WeaverBlockAdapter', 'baseline', 'block', 'block_params', 'blocks', 'build_variant_part', 'cls_block_params', 'collect_moe_aux_loss', 'cycle', 'degree', 'diff_v1', 'diff_v2', 'dropout', 'e8_top2_subflop', 'fc1', 'ffn_ratio', 'fix_init', 'flop_matched', 'flop_matched_full', 'flop_matched_top2', 'full', 'full_softmax', 'gamma', 'hidden', 'lloca', 'lowrank', 'ls1', 'ls2', 'minkowski', 'moe', 'n8', 'out_features', 'pair_embed', 'pair_embed_dims', 'param_matched', 'per_plane', 'rank', 'rope_apply', 'rotary', 'rotary_pairs', 'self_pair_scalar', 'shared_flop_matched', 'sparsemax', 'tied', 'urot']

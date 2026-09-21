@@ -1,0 +1,4 @@
+# file: /private/tmp/cms_upstream/E2E/E2E_Efficient_Jet_Taggers_Suryansh_Mishra/variants/blocks/moe_feedforward.py
+# hypothesis_version: 6.141.1
+
+[0.0, 0.1, 128, 'GATE_MODES', 'HIDDEN_MODES', 'MoEFeedforward', 'aux_loss', 'flop_matched', 'full', 'full_softmax', 'param_matched', 'topk_softmax']

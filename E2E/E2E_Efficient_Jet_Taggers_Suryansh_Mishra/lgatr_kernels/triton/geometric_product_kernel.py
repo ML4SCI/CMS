@@ -5,7 +5,7 @@ hardcoded arithmetic from the Cayley table. All 256 nonzero entries are
 compiled directly into the kernel -- no runtime tensor lookup.
 """
 
-import ml4sci_26.lgatr_kernels.triton as triton
+import triton
 import triton.language as tl
 import torch
 

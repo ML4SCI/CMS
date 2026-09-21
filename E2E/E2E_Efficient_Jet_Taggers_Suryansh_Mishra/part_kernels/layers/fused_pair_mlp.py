@@ -9,7 +9,7 @@ import math
 
 import torch
 import torch.nn as nn
-import ml4sci_26.part_kernels.triton as triton
+import triton
 
 from ..triton.fused_pair_mlp_kernel import (
     _fused_pair_mlp_kernel,

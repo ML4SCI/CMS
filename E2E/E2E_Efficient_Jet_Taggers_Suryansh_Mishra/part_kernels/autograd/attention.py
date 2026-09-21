@@ -17,7 +17,7 @@ import torch
 class _FusedAttnFunc(torch.autograd.Function):
     @staticmethod
     def forward(ctx, Q, K, V, bias, pad_mask, scale, num_heads):
-        import ml4sci_26.part_kernels.triton as triton
+        import triton
 
         from ..triton.attention_kernel import _fused_attn_fwd
 
@@ -72,7 +72,7 @@ class _FusedAttnFunc(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, dOut):
-        import ml4sci_26.part_kernels.triton as triton
+        import triton
 
         from ..triton.attention_kernel import _fused_attn_bwd
 

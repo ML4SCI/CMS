@@ -9,7 +9,7 @@ directly into a dense (N, 4, P, P) output.
 import math
 
 import torch
-import ml4sci_26.part_kernels.triton as triton
+import triton
 import triton.language as tl
 from triton.language.extra.cuda import libdevice
 

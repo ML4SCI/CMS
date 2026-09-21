@@ -1,0 +1,4 @@
+# file: /private/tmp/cms_upstream/E2E/E2E_Efficient_Jet_Taggers_Suryansh_Mishra/variants/n8/__init__.py
+# hypothesis_version: 6.141.1
+
+['N8ParT', 'QUADRATIC_DIM', 'ROTARY_ANGLE_CLAMP', 'azimuth', 'inv_softplus', 'jet_invariant_mass', 'minkowski_qk_extras', 'quadratic_monomials', 'relative_rapidity', 'rotary_qk_extras', 'rotation_2d', 'tensor_product_basis']

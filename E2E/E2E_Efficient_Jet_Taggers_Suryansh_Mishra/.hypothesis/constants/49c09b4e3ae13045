@@ -1,0 +1,4 @@
+# file: /private/tmp/cms_upstream/E2E/E2E_Efficient_Jet_Taggers_Suryansh_Mishra/variants/n8/part.py
+# hypothesis_version: 6.141.1
+
+[0.1, 2.0, 128, 512, 'N8ParT', 'degree', 'fix_init', 'minkowski', 'rotary', 'rotary_pairs']

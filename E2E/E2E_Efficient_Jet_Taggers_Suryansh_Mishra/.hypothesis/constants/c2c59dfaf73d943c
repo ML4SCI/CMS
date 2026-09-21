@@ -1,0 +1,4 @@
+# file: /private/tmp/cms_upstream/E2E/E2E_Efficient_Jet_Taggers_Suryansh_Mishra/variants/tied/stack.py
+# hypothesis_version: 6.141.1
+
+[0.0, 1e-06, 0.5, 1.0, '-inf', 'DepthModulation', 'MoRBlock', 'MoRRouter', 'ModulatedBlock', 'TiedSchedule', 'attn', 'block', 'block_applications', 'blocks', 'build_tied_blocks', 'checkpoint', 'cls_blocks', 'cycle', 'depth', 'fc1', 'fc2', 'ffn', 'gamma', 'head-unique', 'lambda', 'ls1', 'ls2', 'middle-cycle', 'num_unique', 'schedule', 'scope', 'sequence', 'shared_block_groups', 'strategy', 'tied_cost_report', 'total_params', 'unique_block_params', 'untied_branch_scale', 'written']

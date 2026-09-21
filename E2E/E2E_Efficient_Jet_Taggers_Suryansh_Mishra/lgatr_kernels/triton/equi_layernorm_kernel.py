@@ -4,7 +4,7 @@ Fuses: grade-wise metric product -> abs -> sum -> mean -> clamp -> rsqrt -> scal
 into a single kernel. Grade metric signs are compile-time constants.
 """
 
-import ml4sci_26.lgatr_kernels.triton as triton
+import triton
 import triton.language as tl
 import torch
 

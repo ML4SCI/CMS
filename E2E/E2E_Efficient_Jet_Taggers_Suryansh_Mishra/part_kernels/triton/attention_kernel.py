@@ -7,7 +7,7 @@ for dK/dV accumulation across query tiles.
 
 Optimised for ParT's regime:  P <= 128, D = 16, H = 8.
 """
-import ml4sci_26.part_kernels.triton as triton
+import triton
 import triton.language as tl
 
 

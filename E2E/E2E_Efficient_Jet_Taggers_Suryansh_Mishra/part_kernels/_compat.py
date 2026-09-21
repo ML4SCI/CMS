@@ -104,7 +104,7 @@ def has_triton() -> bool:
     global _HAS_TRITON
     if _HAS_TRITON is None:
         try:
-            import ml4sci_26.part_kernels.triton as triton  # noqa: F401
+            import triton  # noqa: F401
             import torch
 
             _HAS_TRITON = bool(torch.cuda.is_available())

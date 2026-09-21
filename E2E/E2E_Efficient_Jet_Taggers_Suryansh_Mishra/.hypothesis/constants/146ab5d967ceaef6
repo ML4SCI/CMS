@@ -1,0 +1,4 @@
+# file: /private/tmp/cms_upstream/E2E/E2E_Efficient_Jet_Taggers_Suryansh_Mishra/variants/__init__.py
+# hypothesis_version: 6.141.1
+
+['.', 'Block', 'DEFAULT_MOE_PRESET', 'Feedforward', 'FramesNet', 'LGATrJetClassifier', 'LLoCaAttentionBlock', 'LLoCaParT', 'MOE_PRESETS', 'MoEFeedforward', 'N8ParT', 'PairEmbed', 'ParticleTransformer', 'REQUIRED_PIN', 'VARIANTS', 'WeaverBlockAdapter', 'assert_weaver_compat', 'blocks', 'build_variant_part', 'collect_moe_aux_loss', 'frames_from_vectors', 'invert_frames', 'lloca', 'n8', 'sparsemax']

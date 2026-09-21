@@ -45,7 +45,7 @@ _PKG_PARENT = Path(__file__).resolve().parents[2]  # .../gsoc_26 (repo root)
 if str(_PKG_PARENT) not in sys.path:
     sys.path.insert(0, str(_PKG_PARENT))
 
-from ml4sci_26.part_kernels._compat import has_triton  # noqa: E402  (CPU-safe submodule)
+from part_kernels._compat import has_triton  # noqa: E402  (CPU-safe submodule)
 from variants.tests.strategies import weaver_batches  # noqa: E402  (shared strategies, task 3.7)
 
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -131,7 +131,7 @@ def _patched_and_pristine(seed):
     The pristine copy is deep-copied BEFORE patching so both models carry
     identical parameters and buffers; `optimize_part_model` patches in place.
     """
-    from ml4sci_26.part_kernels import optimize_part_model
+    from part_kernels import optimize_part_model
 
     torch.manual_seed(seed)
     pristine = _small_part_model()
@@ -166,7 +166,7 @@ def _ref_attention(Q, K, V, bias, pad_mask, scale, num_heads):
 
 @requires_triton
 def test_pairwise_kernel():
-    from ml4sci_26.part_kernels.triton.pairwise_kernel import fused_pairwise_lv_fts
+    from part_kernels.triton.pairwise_kernel import fused_pairwise_lv_fts
 
     torch.manual_seed(42)
     for N, P in [(1, 16), (4, 32), (8, 64), (16, 128)]:
@@ -190,7 +190,7 @@ def test_pairwise_kernel():
 
 @requires_triton
 def test_attention_kernel():
-    from ml4sci_26.part_kernels.autograd.attention import fused_attention_with_bias
+    from part_kernels.autograd.attention import fused_attention_with_bias
 
     torch.manual_seed(42)
     for N, H, P, D in [(2, 8, 32, 16), (4, 8, 64, 16), (8, 8, 128, 16)]:
@@ -214,7 +214,7 @@ def test_attention_kernel():
 
 @requires_triton
 def test_attention_backward():
-    from ml4sci_26.part_kernels.autograd.attention import fused_attention_with_bias
+    from part_kernels.autograd.attention import fused_attention_with_bias
 
     torch.manual_seed(42)
     N, H, P, D = 2, 8, 32, 16
@@ -385,7 +385,7 @@ def test_patched_weaver_model_behaviorally_equivalent_to_pristine(batch, seed):
 
     **Validates: Requirements 2.1, 8.2**
     """
-    from ml4sci_26.part_kernels import optimize_part_model, unpatch_part_model
+    from part_kernels import optimize_part_model, unpatch_part_model
 
     x, v, mask = batch.x.to(DEVICE), batch.v.to(DEVICE), batch.mask.to(DEVICE)
 

@@ -38,7 +38,7 @@ from pathlib import Path
 
 import pytest
 
-import ml4sci_26.part_kernels as part_kernels
+import part_kernels as part_kernels
 
 # The tests/ conftest shim stubs the package only when the real import fails
 # (pre-import-safety environments). Retirement can only be verified against
@@ -119,7 +119,7 @@ def test_optimize_src_part_model_not_importable_from_runtime():
     """part_kernels.runtime imports fine on CPU, but the legacy patcher is
     gone: importing the name must raise ImportError (Req 2.4, 2.5)."""
     with pytest.raises(ImportError):
-        from ml4sci_26.part_kernels.runtime import optimize_src_part_model  # noqa: F401
+        from part_kernels.runtime import optimize_src_part_model  # noqa: F401
 
 
 def test_fused_pairwise_eta_fts_not_importable_from_triton_module():
@@ -132,7 +132,7 @@ def test_fused_pairwise_eta_fts_not_importable_from_triton_module():
       raises a plain ImportError.
     """
     with pytest.raises(ImportError):
-        from ml4sci_26.part_kernels.triton.pairwise_kernel import (  # noqa: F401
+        from part_kernels.triton.pairwise_kernel import (  # noqa: F401
             fused_pairwise_eta_fts,
         )
 

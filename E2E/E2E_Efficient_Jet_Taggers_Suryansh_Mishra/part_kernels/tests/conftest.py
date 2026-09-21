@@ -35,7 +35,7 @@ if str(_PKG_PARENT) not in sys.path:
     sys.path.insert(0, str(_PKG_PARENT))
 
 try:
-    import ml4sci_26.part_kernels as part_kernels  # noqa: F401
+    import part_kernels as part_kernels  # noqa: F401
 except Exception:
     # Drop partially-initialized modules left behind by the failed import.
     for _name in [m for m in sys.modules

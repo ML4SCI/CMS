@@ -4,7 +4,7 @@ GatedGELU(x) = GELU(x[..., 0]) * x   where x has shape (..., 16).
 Uses erf-based GELU matching PyTorch's default.
 """
 
-import ml4sci_26.lgatr_kernels.triton as triton
+import triton
 import triton.language as tl
 from triton.language.extra import libdevice
 import torch

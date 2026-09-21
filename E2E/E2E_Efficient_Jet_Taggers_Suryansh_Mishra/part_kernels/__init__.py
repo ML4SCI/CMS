@@ -32,7 +32,7 @@ from __future__ import annotations
 import importlib
 from typing import Any
 
-from ...part_kernels import _compat
+from . import _compat
 
 # Req 3.3: assert the weaver-core pin before exposing any public name.
 _compat.assert_weaver_compat()

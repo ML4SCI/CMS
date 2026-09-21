@@ -10,7 +10,7 @@ import math
 
 import torch
 import torch.nn as nn
-import ml4sci_26.part_kernels.triton as triton
+import triton
 import triton.language as tl
 from triton.language.extra.cuda import libdevice
 

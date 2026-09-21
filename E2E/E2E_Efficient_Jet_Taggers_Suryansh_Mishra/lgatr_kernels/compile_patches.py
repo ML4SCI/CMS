@@ -21,14 +21,17 @@ _INNER_PRODUCT_FACTORS = [1, 1, -1, -1, -1, -1, -1, -1, 1, 1, 1, 1, 1, 1, -1, -1
 
 _IP_TENSOR: torch.Tensor | None = None
 _MG_TENSOR: torch.Tensor | None = None
+_IP_DTYPE: torch.dtype | None = None
 
 
 def _ensure_tensors(device, dtype):
     """Build the constant tensors once. Called before torch.compile."""
-    global _IP_TENSOR, _MG_TENSOR
-    if _IP_TENSOR is not None:
+    global _IP_TENSOR, _MG_TENSOR, _IP_DTYPE
+    if _IP_TENSOR is not None and _IP_TENSOR.device == torch.device(device) \
+            and _IP_DTYPE == dtype:
         return
     _IP_TENSOR = torch.tensor(_INNER_PRODUCT_FACTORS, device=device, dtype=dtype)
+    _IP_DTYPE = dtype
     m_grades = torch.zeros(5, 16, device=device, dtype=dtype)
     offset = 0
     for grade in range(5):
@@ -39,13 +42,15 @@ def _ensure_tensors(device, dtype):
 
 
 def _fast_load_inner_product_factors(device, dtype) -> torch.Tensor:
-    if _IP_TENSOR is not None and _IP_TENSOR.device == torch.device(device):
+    if _IP_TENSOR is not None and _IP_TENSOR.device == torch.device(device) \
+            and _IP_TENSOR.dtype == dtype:
         return _IP_TENSOR
     return torch.tensor(_INNER_PRODUCT_FACTORS, device=device, dtype=dtype)
 
 
 def _fast_load_metric_grades(device, dtype) -> torch.Tensor:
-    if _MG_TENSOR is not None and _MG_TENSOR.device == torch.device(device):
+    if _MG_TENSOR is not None and _MG_TENSOR.device == torch.device(device) \
+            and _MG_TENSOR.dtype == dtype:
         return _MG_TENSOR
     m = _fast_load_inner_product_factors(device, dtype)
     m_grades = torch.zeros(5, 16, device=device, dtype=dtype)
