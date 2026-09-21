@@ -1,0 +1,32 @@
+# Smoke test — validates the whole pipeline end to end in a couple of minutes.
+#
+# Run this before submitting the real jobs. It exercises exactly the code paths a
+# 24-hour run uses (data loading, DDP, AMP, eval, checkpoint, resume) at a size
+# where a mistake costs minutes instead of an allocation.
+#
+#   python -m ablation.train --config configs/smoke.yaml \
+#       --set train_pt_dir=$PSCRATCH/jetclass/pt_ragged/train_100M \
+#       --set val_pt_dir=$PSCRATCH/jetclass/pt_ragged/val_5M \
+#       --set arm=lloca --set precision=fp32
+#
+# `total_steps` stays large on purpose so the LR schedule is the real one; only
+# `max_steps` cuts the run short.
+_base: base.yaml
+
+run_name: smoke
+max_steps: 60
+
+# A tiny model: the point is to exercise the plumbing, not to learn anything.
+num_layers: 2
+num_cls_layers: 1
+batch_size: 16
+grad_accum_steps: 2
+
+num_workers: 2
+prefetch_factor: 2
+val_max_jets: 2000
+
+log_every: 10
+eval_every: 30
+checkpoint_every: 30
+output_dir: runs/smoke
