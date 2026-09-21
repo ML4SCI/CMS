@@ -115,8 +115,8 @@ shards, so the raw shards stay reusable. `v` is always left raw — the pair-fea
 MLP is defined on raw four-momenta.
 
 Dataset layout, measured multiplicity statistics, the on-disk shard schema, and
-the storage-tier layout are in `JetClass_Readme.mdc` and `Cluster_Readme.mdc` at
-the repo root.
+the storage-tier layout are documented in the [project write-up](https://medium.com/@omasho.works/finding-the-right-architecture-for-jet-taggers-84c5dad467ee)
+and the preprocessing scripts in `preprocessing/`.
 
 ---
 
