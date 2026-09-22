@@ -1,4 +1,0 @@
-# file: /private/tmp/cms_upstream/E2E/E2E_Efficient_Jet_Taggers_Suryansh_Mishra/part_kernels/_compat.py
-# hypothesis_version: 6.141.1
-
-['.', 'Attention', 'Attention.forward', 'Block', 'Block.forward', 'PATCH_TARGETS', 'PairEmbed', 'PairEmbed.forward', 'ParticleTransformer', 'REQUIRED_PIN', 'assert_weaver_compat', 'get_in_proj_params', 'has_triton', 'in_proj', 'in_proj_bias', 'in_proj_weight', 'pairwise_lv_fts_pp', 'weight']

@@ -1,4 +1,0 @@
-# file: /private/tmp/cms_upstream/E2E/E2E_Efficient_Jet_Taggers_Suryansh_Mishra/variants/lloca/__init__.py
-# hypothesis_version: 6.141.1
-
-['FramesNet', 'LLoCaAttentionBlock', 'LLoCaParT', 'MINKOWSKI_SIGNATURE', 'REFERENCE_PARTICLES', 'apply_metric', 'boost_matrix', 'frames_from_vectors', 'gram_schmidt_3d', 'invert_frames', 'minkowski_dot', 'minkowski_norm', 'to_time_first', 'to_weaver_order']
