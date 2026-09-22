@@ -1,0 +1,45 @@
+==============================================================================
+  LorentzGATr Benchmark on QuarkGluon (bs=128)
+  GPU: NVIDIA A100-SXM4-80GB
+  PyTorch: 2.10.0+cu128
+  Data: /root/e2e/data/QuarkGluon/val.npz
+  Each tier runs in a FRESH subprocess (no cross-contamination)
+==============================================================================
+
+  --- Part 1: Kernel-Level Microbenchmarks ---
+  Shape: B=128, items=128, mv_channels=8, s_channels=16
+
+  Kernel                         Baseline  Optimized  Speedup  BaseMem   OptMem
+  ---------------------------- ---------- ---------- -------- -------- --------
+  EquiLinear (fwd)                   459us       152us    3.03x      36MB      38MB
+  Geometric Product (fwd)            305us       136us    2.25x     178MB      44MB
+  Equi LayerNorm (fwd)               208us       261us    0.80x      44MB      36MB
+  Gated GELU (fwd)                    34us       115us    0.29x      36MB      36MB
+
+  --- Part 2: Model-Level Tiers ---
+
+
+  Running 1. baseline (stock lgatr) ...
+    infer=55.26ms  train=179.08ms  infer_mem=713MB  train_mem=5338MB
+
+  Running 2. +kernels (fuse+GP) ...
+    infer=35.61ms  train=110.35ms  infer_mem=733MB  train_mem=5311MB
+
+  Running 3. +compile (with patches) ...
+    infer=21.75ms  train=61.10ms  infer_mem=743MB  train_mem=3444MB
+
+==============================================================================
+  RESULTS
+==============================================================================
+
+  Tier                                Infer    Spd    IMem    Train    Spd    TMem
+  -------------------------------- -------- ------ ------- -------- ------ -------
+  1. baseline (stock lgatr)           55.3ms   1.0x    713MB   179.1ms   1.0x   5338MB
+  2. +kernels (fuse+GP)               35.6ms   1.6x    733MB   110.3ms   1.6x   5311MB
+  3. +compile (with patches)          21.8ms   2.5x    743MB    61.1ms   2.9x   3444MB
+
+  Model: LorentzGATr, 708,992 params
+  Config: 8 LGATr blocks (mv=8, s=16), num_classes=2
+  Data: QuarkGluon val, 128 real jets, 128 particles, 4 features (pT, eta, phi, E)
+  Isolation: each tier ran in a fresh Python subprocess
+
