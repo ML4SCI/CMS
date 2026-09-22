@@ -30,7 +30,11 @@ from ..utils import (
     cleanup_ddp
 )
 from ..utils.data import JetClassDistributedSampler
-from ..utils.viz import *
+from ..utils.viz import (
+    plot_roc_curve,
+    plot_confusion_matrix,
+    plot_history
+)
 
 
 class Trainer:

@@ -11,7 +11,6 @@ from torch.distributed import all_gather, all_gather_object
 from .trainer import Trainer
 from ..utils import cleanup_ddp
 from ..utils.data import JetClassDistributedSampler
-from ..utils.viz import *
 
 
 class MaskedModelTrainer(Trainer):

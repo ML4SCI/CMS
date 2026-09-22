@@ -12,7 +12,10 @@ from torch.distributed import all_gather, all_gather_object
 from .trainer import Trainer
 from ..utils import cleanup_ddp
 from ..utils.data import JetClassDistributedSampler
-from ..utils.viz import *
+from ..utils.viz import (
+    plot_roc_curve,
+    plot_confusion_matrix
+)
 
 
 class JetClassTrainer(Trainer):
