@@ -1,0 +1,58 @@
+nohup: ignoring input
+GPU    : NVIDIA A100-SXM4-80GB
+PyTorch: 2.10.0+cu128
+Model  : LorentzParT (Hybrid)
+Data   : /root/e2e/data/QuarkGluon/train.npz
+Epochs : 10  |  Batch: 512  |  Seed: 42
+
+======================================================================
+  Running: BASELINE
+======================================================================
+  Epoch  1/10  train_loss=0.7042  val_loss=0.6905  train_acc=0.5285  val_acc=0.5172  lr=7.36e-04  time=45.5s
+  Epoch  2/10  train_loss=0.5048  val_loss=0.4911  train_acc=0.7593  val_acc=0.7700  lr=5.42e-04  time=45.1s
+  Epoch  3/10  train_loss=0.4889  val_loss=0.4904  train_acc=0.7708  val_acc=0.7719  lr=3.99e-04  time=45.1s
+  Epoch  4/10  train_loss=0.4873  val_loss=0.4964  train_acc=0.7714  val_acc=0.7644  lr=2.93e-04  time=45.1s
+  Epoch  5/10  train_loss=0.4859  val_loss=0.4926  train_acc=0.7731  val_acc=0.7671  lr=2.16e-04  time=45.1s
+  Epoch  6/10  train_loss=0.4858  val_loss=0.4896  train_acc=0.7724  val_acc=0.7713  lr=1.59e-04  time=45.1s
+  Epoch  7/10  train_loss=0.4861  val_loss=0.5053  train_acc=0.7719  val_acc=0.7599  lr=1.17e-04  time=45.1s
+  Epoch  8/10  train_loss=0.4844  val_loss=0.4994  train_acc=0.7736  val_acc=0.7649  lr=8.61e-05  time=45.1s
+  Epoch  9/10  train_loss=0.4842  val_loss=0.4946  train_acc=0.7735  val_acc=0.7663  lr=6.34e-05  time=45.1s
+  Epoch 10/10  train_loss=0.4837  val_loss=0.4864  train_acc=0.7740  val_acc=0.7735  lr=4.66e-05  time=45.1s
+{"mode": "baseline", "params": 2270088, "total_time": 451.3, "med_epoch": 45.1, "best_val_acc": 0.7735, "best_val_loss": 0.4864, "peak_mem_mb": 30413.0, "epoch_times": [45.5, 45.1, 45.1, 45.1, 45.1, 45.1, 45.1, 45.1, 45.1, 45.1]}
+
+======================================================================
+  Running: OPTIMIZED
+======================================================================
+[lgatr_kernels] Patched lgatr primitives (equi_linear, geometric_product)
+[lgatr_kernels] Patched compile helpers (+invariant cache, +einsum fast paths)
+  [optimized] Patches applied: fused pairwise, fused attention, fused EquiLinear, compile patches, torch.compile
+  Epoch  1/10  train_loss=0.6221  val_loss=0.5013  train_acc=0.6382  val_acc=0.7611  lr=7.36e-04  time=105.3s
+  Epoch  2/10  train_loss=0.4974  val_loss=0.4936  train_acc=0.7640  val_acc=0.7692  lr=5.42e-04  time=22.9s
+  Epoch  3/10  train_loss=0.4915  val_loss=0.4922  train_acc=0.7674  val_acc=0.7688  lr=3.99e-04  time=22.5s
+  Epoch  4/10  train_loss=0.4902  val_loss=0.4917  train_acc=0.7688  val_acc=0.7717  lr=2.93e-04  time=22.5s
+  Epoch  5/10  train_loss=0.4889  val_loss=0.4899  train_acc=0.7699  val_acc=0.7696  lr=2.16e-04  time=22.5s
+  Epoch  6/10  train_loss=0.4866  val_loss=0.5082  train_acc=0.7717  val_acc=0.7558  lr=1.59e-04  time=22.4s
+  Epoch  7/10  train_loss=0.4859  val_loss=0.4872  train_acc=0.7715  val_acc=0.7721  lr=1.17e-04  time=22.5s
+  Epoch  8/10  train_loss=0.4839  val_loss=0.4921  train_acc=0.7733  val_acc=0.7696  lr=8.61e-05  time=22.5s
+  Epoch  9/10  train_loss=0.4837  val_loss=0.4865  train_acc=0.7738  val_acc=0.7721  lr=6.34e-05  time=22.5s
+  Epoch 10/10  train_loss=0.4830  val_loss=0.4865  train_acc=0.7737  val_acc=0.7720  lr=4.66e-05  time=22.5s
+{"mode": "optimized", "params": 2270088, "total_time": 308.0, "med_epoch": 22.5, "best_val_acc": 0.7721, "best_val_loss": 0.4865, "peak_mem_mb": 18799.0, "epoch_times": [105.3, 22.9, 22.5, 22.5, 22.5, 22.4, 22.5, 22.5, 22.5, 22.5]}
+
+======================================================================
+  COMPARISON: LorentzParT (Hybrid) on QuarkGluon
+======================================================================
+
+  Metric                           Baseline        Optimized
+  ------------------------ ---------------- ----------------
+  Params                          2,270,088        2,270,088
+  Best val accuracy                  0.7735           0.7721
+  Best val loss                      0.4864           0.4865
+  Total time                         451.3s           308.0s
+  Median epoch time                   45.1s            22.5
+  Training speedup                    1.00x            2.00x
+  Peak GPU memory                  30413 MB         18799 MB
+
+  Optimized = fused pairwise + fused attention (part_kernels)
+           + fused EquiLinear + compile patches (lgatr_kernels)
+           + torch.compile(mode='reduce-overhead')
+

@@ -1,0 +1,24 @@
+# Middle-Cycle, k=3: blocks 0 and 7 stay unique, the middle six share one block. 1,144,914 params (1.87x). This is the configuration FOUR independent papers converge on -- MoR (arXiv:2507.10524) compares Cycle/Sequence/Middle-Cycle/Middle-Sequence and finds Middle-Cycle 'consistently achieves the lowest validation loss'. The mechanism: block 0 does embedding-like work and block 7 readout-like work, neither of which is the iterative refinement the middle performs.
+#
+# WAVE 2 (2026-09-06). Every arm in this wave sets residual_scale_lambda: 1.0, which applies the
+# looped-transformer law eps = lambda/(N*sqrt(L)) to the residual BRANCHES via weaver's LayerScale.
+# This is NOT a favour to the tied arms: the single formula covers baseline too (L=num_layers, N=1),
+# and it is what makes forward statistics arm-independent. Measured residual growth over depth --
+#   without:  baseline 3.72x   k=1 9.23x   k=2 6.36x   k=4 4.52x
+#   with:     baseline 1.61x   k=1 1.63x   k=2 1.57x   k=4 1.54x
+# Without it a tied-vs-baseline delta is partly a comparison of forward statistics, because
+# build_tied_blocks keeps blocks[:num_unique] -- the shallowest, LEAST fix_init-rescaled blocks --
+# and applies them N times. See logs/looped-survey-2026-09-06/README.md.
+#
+# COMPARE ONLY against baseline_wave2 (same commit, same lambda). The recorded 0.85453 anchor is
+# confounded six ways and did not have the eps correction.
+_base: baseline.yaml
+
+arm: tied
+run_name: tied_mc3_wave2
+experiment: looped_wave2
+
+residual_scale_lambda: 1.0
+tie_num_unique: 3
+tie_strategy: middle-cycle
+max_steps: 200000

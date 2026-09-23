@@ -1,0 +1,10 @@
+# Arm 4/6 — sparsemax attention.
+#
+# sparsemax replaces softmax, producing genuinely sparse attention (exact zeros)
+# rather than a dense distribution. Note the known tradeoff for jet physics: hard
+# zeros cut the gradient to low-weight constituents, which is where much of the
+# quark/gluon discrimination lives.
+_base: base.yaml
+
+arm: sparsemax
+run_name: sparsemax

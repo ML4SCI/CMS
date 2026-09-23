@@ -1,0 +1,48 @@
+nohup: ignoring input
+==============================================================================
+  Particle Transformer Benchmark (N=128, P=128)
+  GPU: NVIDIA A100-SXM4-80GB
+  PyTorch: 2.10.0+cu128
+  Each tier runs in a FRESH subprocess (no cross-contamination)
+==============================================================================
+
+  --- Part 1: Kernel-Level Microbenchmarks ---
+  Shape: N=128, P=128, H=8, D=16
+
+  Kernel                         Baseline  Optimized  Speedup  BaseMem   OptMem
+  ---------------------------- ---------- ---------- -------- -------- --------
+  Pairwise LV (fwd)                  766us       114us    6.69x     118MB      34MB
+  Attention+Bias (fwd)               452us       189us    2.39x     243MB     110MB
+  PairEmbed+MLP (fwd)               9227us      2034us    4.54x    1119MB      79MB
+
+  --- Part 2: Model-Level Tiers ---
+
+
+  Running 1. baseline (stock ParT) ...
+    infer=18.36ms  train=74.20ms  infer_mem=1136MB
+
+  Running 2. +kernels (fused attn+pair) ...
+    infer=7.63ms  train=66.87ms  infer_mem=182MB
+
+  Running 3. +kernels + CUDA graph ...
+    infer=7.26ms  train=N/A  infer_mem=1870MB
+
+  Running 4. +compile (reduce-overhead) ...
+    infer=5.38ms  train=36.56ms  infer_mem=174MB
+
+==============================================================================
+  RESULTS
+==============================================================================
+
+  Tier                                  Infer    Spd    IMem    Train    Spd    TMem
+  ---------------------------------- -------- ------ ------- -------- ------ -------
+  1. baseline (stock ParT)              18.4ms   1.0x   1136MB    74.2ms   1.0x   8153MB
+  2. +kernels (fused attn+pair)          7.6ms   2.4x    182MB    66.9ms   1.1x   6968MB
+  3. +kernels + CUDA graph               7.3ms   2.5x   1870MB     N/A     --      --
+  4. +compile (reduce-overhead)          5.4ms   3.4x    174MB    36.6ms   2.0x   5077MB
+
+  Model: ParticleTransformer, 2,143,486 params
+  Config: 8 blocks, 2 cls blocks, embed=[128,512,128], pair=[64,64,64]
+  Data: synthetic (N=128, P=128, 17 features, physical 4-vectors)
+  Isolation: each tier ran in a fresh Python subprocess
+

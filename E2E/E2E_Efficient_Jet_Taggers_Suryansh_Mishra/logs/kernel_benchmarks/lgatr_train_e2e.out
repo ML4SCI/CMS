@@ -1,0 +1,57 @@
+nohup: ignoring input
+GPU    : NVIDIA A100-SXM4-80GB
+PyTorch: 2.10.0+cu128
+Data   : /root/e2e/data/QuarkGluon/train.npz
+Epochs : 10  |  Batch: 512  |  Seed: 42
+
+======================================================================
+  Running: BASELINE
+======================================================================
+  Epoch  1/10  train_loss=0.6849  val_loss=0.5058  train_acc=0.5505  val_acc=0.7630  lr=9.50e-04  time=91.5s
+  Epoch  2/10  train_loss=0.5014  val_loss=0.5005  train_acc=0.7605  val_acc=0.7577  lr=9.02e-04  time=91.6s
+  Epoch  3/10  train_loss=0.4971  val_loss=0.4918  train_acc=0.7644  val_acc=0.7663  lr=8.57e-04  time=91.3s
+  Epoch  4/10  train_loss=0.4918  val_loss=0.4887  train_acc=0.7675  val_acc=0.7701  lr=8.15e-04  time=91.3s
+  Epoch  5/10  train_loss=0.5032  val_loss=0.4911  train_acc=0.7601  val_acc=0.7684  lr=7.74e-04  time=91.2s
+  Epoch  6/10  train_loss=0.4877  val_loss=0.4881  train_acc=0.7710  val_acc=0.7709  lr=7.35e-04  time=91.3s
+  Epoch  7/10  train_loss=0.4872  val_loss=0.4891  train_acc=0.7715  val_acc=0.7713  lr=6.98e-04  time=91.2s
+  Epoch  8/10  train_loss=0.4866  val_loss=0.4858  train_acc=0.7713  val_acc=0.7718  lr=6.63e-04  time=91.2s
+  Epoch  9/10  train_loss=0.4859  val_loss=0.4857  train_acc=0.7722  val_acc=0.7731  lr=6.30e-04  time=91.2s
+  Epoch 10/10  train_loss=0.4860  val_loss=0.4884  train_acc=0.7725  val_acc=0.7716  lr=5.99e-04  time=91.3s
+{"mode": "baseline", "params": 708992, "total_time": 913.2, "med_epoch": 91.3, "best_val_acc": 0.7731, "best_val_loss": 0.4857, "peak_mem_mb": 20199.0, "epoch_times": [91.5, 91.6, 91.3, 91.3, 91.2, 91.3, 91.2, 91.2, 91.2, 91.3]}
+
+======================================================================
+  Running: OPTIMIZED
+======================================================================
+[lgatr_kernels] Patched lgatr primitives (equi_linear, geometric_product)
+[lgatr_kernels] Patched compile helpers (+invariant cache, +einsum fast paths)
+W0326 12:31:49.382000 2465109 torch/_dynamo/convert_frame.py:1676] [17/8] torch._dynamo hit config.recompile_limit (8)
+W0326 12:31:49.382000 2465109 torch/_dynamo/convert_frame.py:1676] [17/8]    function: 'forward' (/root/e2e/lgatr_kernels/layers/fused_linear.py:150)
+W0326 12:31:49.382000 2465109 torch/_dynamo/convert_frame.py:1676] [17/8]    last reason: 17/7: tensor 'scalars' size mismatch at index 2. expected 64, actual 16
+W0326 12:31:49.382000 2465109 torch/_dynamo/convert_frame.py:1676] [17/8] To log all recompilation reasons, use TORCH_LOGS="recompiles".
+W0326 12:31:49.382000 2465109 torch/_dynamo/convert_frame.py:1676] [17/8] To diagnose recompilation issues, see https://pytorch.org/docs/main/compile/programming_model.recompilation.html
+  Epoch  1/10  train_loss=0.7149  val_loss=0.6874  train_acc=0.5063  val_acc=0.7470  lr=9.50e-04  time=76.9s
+  Epoch  2/10  train_loss=0.5413  val_loss=0.5044  train_acc=0.7219  val_acc=0.7539  lr=9.02e-04  time=45.0s
+  Epoch  3/10  train_loss=0.4885  val_loss=0.4879  train_acc=0.7705  val_acc=0.7697  lr=8.57e-04  time=34.2s
+  Epoch  4/10  train_loss=0.4862  val_loss=0.4883  train_acc=0.7715  val_acc=0.7717  lr=8.15e-04  time=33.6s
+  Epoch  5/10  train_loss=0.4860  val_loss=0.4908  train_acc=0.7725  val_acc=0.7671  lr=7.74e-04  time=33.6s
+  Epoch  6/10  train_loss=0.4851  val_loss=0.4861  train_acc=0.7721  val_acc=0.7725  lr=7.35e-04  time=33.6s
+  Epoch  7/10  train_loss=0.4858  val_loss=0.4908  train_acc=0.7717  val_acc=0.7732  lr=6.98e-04  time=33.6s
+  Epoch  8/10  train_loss=0.4851  val_loss=0.4860  train_acc=0.7727  val_acc=0.7718  lr=6.63e-04  time=33.6s
+  Epoch  9/10  train_loss=0.4842  val_loss=0.4870  train_acc=0.7727  val_acc=0.7731  lr=6.30e-04  time=33.6s
+  Epoch 10/10  train_loss=0.4845  val_loss=0.4907  train_acc=0.7732  val_acc=0.7698  lr=5.99e-04  time=33.6s
+{"mode": "optimized", "params": 708992, "total_time": 391.6, "med_epoch": 33.6, "best_val_acc": 0.7732, "best_val_loss": 0.486, "peak_mem_mb": 13074.0, "epoch_times": [76.9, 45.0, 34.2, 33.6, 33.6, 33.6, 33.6, 33.6, 33.6, 33.6]}
+
+======================================================================
+  COMPARISON
+======================================================================
+
+  Metric                           Baseline        Optimized
+  ------------------------ ---------------- ----------------
+  Params                            708,992          708,992
+  Best val accuracy                  0.7731           0.7732
+  Best val loss                      0.4857           0.4860
+  Total time                         913.2s           391.6s
+  Median epoch time                   91.3s            33.6s
+  Training speedup                    1.00x            2.72x
+  Peak GPU memory                  20199 MB         13074 MB
+
