@@ -1,0 +1,32 @@
+# N8 K6 screen — tensor-product rotary + rank-4 Minkowski extras, PairEmbed off.
+#
+# Replaces the dense pair bias with extra Q/K channels:
+#   d_ij / (E_i E_j) via folded four-momenta, and R(k φ) ⊗ M(a u) with λ_rotary.
+# Content scale stays 1/sqrt(d_head); extras are a separate logit term.
+#
+# max_steps caps the screen at 200k so this file cannot accidentally launch
+# the full 1M recipe. The LR schedule still spans total_steps=1M, so steps
+# are directly comparable to baseline / baseline_nopair at 150k / 175k / 200k.
+#
+# use_part_kernels is off: there is no PairEmbed to fuse. submit_n8.sh
+# exports USE_PART_KERNELS=false so train_arm.sh's default does not override.
+#
+# Do not add this arm to submit_all.sh. Degree-2 (n8_degree: 2) is wired
+# but not this job — K6 first, then K2 if the gate says iterate.
+#
+# run_name is n8_k6_v2 so this rescreen cannot load runs/n8_k6/last.pt
+# (incompatible state_dict after the extras fix).
+_base: baseline.yaml
+
+arm: n8
+run_name: n8_k6_v2
+experiment: n8_k6_v2
+
+pair_embed_dims: null
+use_part_kernels: false
+max_steps: 200000
+
+n8_minkowski: true
+n8_rotary: true
+n8_rotary_pairs: 4
+n8_degree: 1

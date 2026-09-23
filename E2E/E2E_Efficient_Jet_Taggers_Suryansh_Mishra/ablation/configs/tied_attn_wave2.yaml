@@ -1,0 +1,24 @@
+# ALBERT-faithful control: share the ATTENTION projections across all 8 depths, keep every FFN and every norm per-depth. 1,681,018 params (1.28x). ALBERT Table 4 at E=128 measures shared-attention at +0.1 aggregate (free) and shared-FFN at -1.4, stating 'most of the performance drop appears to come from sharing the FFN-layer parameters'. In ParT attention is only 33.1% of a block, so this is the cheap-but-safe end -- and pairing it with tied_ffn_wave2 converts 'does tying work?' into 'which sublayer carries depthwise specialisation?', which yields a result either way.
+#
+# WAVE 2 (2026-09-06). Every arm in this wave sets residual_scale_lambda: 1.0, which applies the
+# looped-transformer law eps = lambda/(N*sqrt(L)) to the residual BRANCHES via weaver's LayerScale.
+# This is NOT a favour to the tied arms: the single formula covers baseline too (L=num_layers, N=1),
+# and it is what makes forward statistics arm-independent. Measured residual growth over depth --
+#   without:  baseline 3.72x   k=1 9.23x   k=2 6.36x   k=4 4.52x
+#   with:     baseline 1.61x   k=1 1.63x   k=2 1.57x   k=4 1.54x
+# Without it a tied-vs-baseline delta is partly a comparison of forward statistics, because
+# build_tied_blocks keeps blocks[:num_unique] -- the shallowest, LEAST fix_init-rescaled blocks --
+# and applies them N times. See logs/looped-survey-2026-09-06/README.md.
+#
+# COMPARE ONLY against baseline_wave2 (same commit, same lambda). The recorded 0.85453 anchor is
+# confounded six ways and did not have the eps correction.
+_base: baseline.yaml
+
+arm: tied
+run_name: tied_attn_wave2
+experiment: looped_wave2
+
+residual_scale_lambda: 1.0
+tie_num_unique: 1
+tie_scope: attn
+max_steps: 200000

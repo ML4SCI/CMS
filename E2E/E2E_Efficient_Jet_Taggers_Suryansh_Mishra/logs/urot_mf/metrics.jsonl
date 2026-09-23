@@ -1,0 +1,1 @@
+{"event": "start", "experiment": "urot_mf", "arm": "urot", "params": 8470202, "world_size": 4, "global_batch": 1024, "git_root": "/global/u1/o/omasho/code/gsoc_26", "git_commit": "e1080beeb3dc3fd2419743455251c264c36118ef", "git_commit_short": "e1080be", "git_branch": "main", "git_dirty": false, "git_describe": "e1080be"}

@@ -1,0 +1,23 @@
+# R2 grouped tying, 2 unique looped. 945,226 params (2.27x).
+#
+# Weight-tied encoder stack. Blocks are 74.5% of ParT's parameters, so tying is the largest
+# available parameter reduction -- but depth is UNCHANGED, so FLOPs are unchanged and this is
+# not a speedup. See variants/tied/ and logs/cluster-audit-2026-08-30.md.
+#
+# Run ablation/layer_redundancy.py (R0) on a trained checkpoint first: it predicts whether tying
+# can work at all, for free, before any GPU-hours are spent.
+#
+# tie_num_unique: 8 would be exactly stock baseline (asserted in test_tied_properties.py), so it
+# is the control rather than an arm.
+#
+# max_steps caps the screen at 200k; the LR schedule still spans total_steps=1M so steps match
+# baseline. New run_name so it cannot resume runs/baseline.
+_base: baseline.yaml
+
+arm: tied
+run_name: tied_k2_cycle
+experiment: tied_depth_wave0
+
+tie_num_unique: 2
+tie_strategy: cycle
+max_steps: 200000

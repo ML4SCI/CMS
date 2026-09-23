@@ -1,0 +1,17 @@
+# U as RoPE: pool PairEmbed U to a per-token phase, apply LLaMA rotary
+# to Q and K, then ordinary QK^T.  U is not added as a scalar.
+#
+# Inverse of K6 and the RoPE-shaped follow-up to in-flight `urot`:
+#   urot       pairwise θ_ij fused into the score (not apply-then-matmul)
+#   urot_rope  ψ_i = α · mean_j U_ij
+#              Q_i ← R(ψ_i) Q_i,  K_j ← R(ψ_j) K_j   (geometric ω_p)
+#              score = Q K^T / √d
+#
+# Same width as baseline / urot (d=128, 8 heads, 8 two-planes).  Not K2.
+# Do not resume runs/urot.  Leave Wave 0 / n8_k6* dirs alone.
+_base: urot.yaml
+
+run_name: urot_rope
+experiment: urot_rope
+
+urot_rope_apply: true

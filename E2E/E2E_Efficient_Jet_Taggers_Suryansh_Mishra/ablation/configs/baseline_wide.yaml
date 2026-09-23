@@ -1,0 +1,18 @@
+# Wave 0 dense-capacity screen: wider token path, stock FFN ratio and PairEmbed.
+#
+# embed_dims [160, 640, 160], num_heads 8 → d_head 20 (baseline 128 / 16).
+# expansion_factor stays 4, so FFN hidden scales with width (640 vs 512).
+# Answers whether the bottleneck is content QKV rather than FFN or U.
+#
+# max_steps 200k; 1M LR schedule for matched steps.
+#
+# Do not add this to submit_all.sh. New run_name so it cannot resume baseline.
+_base: baseline.yaml
+
+arm: baseline
+run_name: baseline_wide
+experiment: scale_capacity_wave0
+
+embed_dims: [160, 640, 160]
+num_heads: 8
+max_steps: 200000
