@@ -292,7 +292,7 @@ class Trainer:
         self.logging_path = os.path.join(self.loggings_dir, f"{self.run_name}.csv")
 
     def _get_next_run_index(self) -> str:
-        return f"pid{os.getpid()}_{datetime.now().strftime("%Y%m%d-%H%M%S")}"
+        return f"pid{os.getpid()}_{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 
     def _set_logging_paths(self, run_name: str):
         self.run_name = run_name
