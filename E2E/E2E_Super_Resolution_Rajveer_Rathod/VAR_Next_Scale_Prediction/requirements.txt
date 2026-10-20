@@ -1,0 +1,12 @@
+# Colab already provides everything except optuna (and sometimes tabulate).
+torch>=2.1
+numpy
+scipy
+scikit-learn
+pandas
+matplotlib
+h5py
+pyarrow
+requests
+optuna>=3.4
+tabulate
