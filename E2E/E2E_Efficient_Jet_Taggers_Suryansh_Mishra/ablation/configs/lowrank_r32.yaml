@@ -1,0 +1,41 @@
+# Rank-32 factorized pair bias. Replaces weaver's PairEmbed (an MLP over all N^2 pairs) with
+# per-particle factors whose outer product is the bias: N evaluations instead of N^2.
+#
+# WHY r=32: the safe point. P5 says r=34 truncation is accuracy-neutral (-0.0005), so this should match baseline; if it does not, the arm is broken rather than the rank being insufficient.
+#
+# Licensed by measurement, not intuition -- see logs/audit-2026-09-05/README.md:
+#   B4   the trained bias IS low rank (p90 25 row-centred, 0.78x/0.62x the matched null, p=0.000)
+#   P4   one scalar per head recovers 90% of the self-pair diagonal's rank cost
+#   P5   and is worth a FACTOR OF 2 in rank behaviourally; operating curve r=34 -0.0005,
+#        r=16 -0.0205, r=8 -0.0385 when truncating an ALREADY-TRAINED bias
+#   B4a  hand-built polynomial features plateau 10x short of the SVD optimum, so LEARN the factors
+#
+# P5's numbers are a LOWER bound here: truncation deprives a trained model of structure it had
+# learned to use, whereas training with the constraint lets the network adapt to it.
+#
+# NOT A SPEEDUP. Weaver requires a materialized (B,H,N,N) attn_mask, so the outer product is still
+# formed and wall-clock time will not improve. This arm answers "does a rank-r bias train?"; the
+# speedup needs a fused kernel consuming the factors directly. lowrank_cost_report() keeps the FLOP
+# reduction and the undelivered speedup in separate keys for exactly this reason.
+#
+# max_steps caps the screen at 200k; the LR schedule still spans total_steps=1M so steps are
+# comparable. Compare ONLY against a baseline run on the same commit -- the recorded 0.85453 anchor
+# is confounded six ways (logs/cluster-audit-2026-08-30.md section 4).
+#
+# KERNEL ASYMMETRY (measured 2026-09-06). part_kernels' Patch A fires on
+# `isinstance(module, PairEmbed)`, so BASELINE gets its dominant kernel fused (4.54x: 9,227us ->
+# 2,034us) and THIS ARM DOES NOT -- LowRankPairEmbed is skipped, not clobbered (verified: module
+# survives, logits bit-identical, rank bound intact). Consequence runs opposite to the usual worry:
+# accuracy stays comparable (the fused kernel is parity-tested as equivalent) but WALL-CLOCK is
+# biased AGAINST this arm. Do NOT compare jets_per_sec against baseline -- this arm does ~40x fewer
+# FLOPs and would still look slower. Throughput is only meaningful once a fused kernel consuming the
+# factors exists.
+_base: baseline.yaml
+
+arm: lowrank
+run_name: lowrank_r32
+experiment: lowrank_bias_wave0
+
+lowrank_rank: 32
+lowrank_self_pair: true
+max_steps: 200000

@@ -1,0 +1,39 @@
+# Arm 2/6 — LLoCa: Lorentz Local Canonicalization (arXiv:2505.20280).
+#
+# Learned per-particle local Lorentz frames make the token features invariant;
+# the encoder then transports tensorial messages between frames.
+_base: base.yaml
+
+arm: lloca
+run_name: lloca
+
+# Required, not a preference: bf16/fp16 destroy the exact equivariance that is
+# the whole point of the arm. The paper runs LLoCa-ParT in single precision
+# throughout for the same reason (App. D.3). The config layer rejects any other
+# value for this arm rather than silently "fixing" it.
+precision: fp32
+
+# Frame-prediction MLP. The paper uses 128 hidden channels; App. E reports 16 is
+# nearly as good. It allocates a (B, P, P+3, hidden) activation, so this is the
+# arm's dominant extra memory cost -- lower it first if a node runs out.
+lloca_frames_hidden_dim: 64
+lloca_frames_dropout: 0.0
+
+# Mass regulator m_eps: keeps numerically-massless particles from producing a
+# null v0 and hence a divergent boost (App. D.1 uses 5e-3 for tagging).
+lloca_frames_min_mass: 0.005
+
+# Both of the paper's symmetry-breaking channels. JetClass tagging is only
+# SO(2)-equivariant about the beam axis, and Tab. 6 shows a fully symmetric model
+# loses a large amount of background rejection.
+lloca_symmetry_breaking: true   # reference vectors (1,0,0,0), (1,0,0,+-1)
+lloca_use_nis: true             # global kinematics as frame-net scalars
+
+# null -> the paper's equal mix: 8 scalars + 2 four-vectors per 16-dim head.
+lloca_num_vector_channels: null
+lloca_freeze_frames_net: false
+
+# fp32 raises activation memory vs bf16 arms; half microbatch + accum keeps
+# the same global batch as base (4 x 256 = 1024 → 4 x 128 x 2).
+batch_size: 128
+grad_accum_steps: 2

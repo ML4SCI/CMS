@@ -1,0 +1,20 @@
+# U-as-rotation screen — PairEmbed stays on; U is a pairwise rotation, not a logit.
+#
+# Inverse of K6: K6 discarded PairEmbed and added extras-from-momenta as a
+# scalar (not-U).  This keeps stock PairEmbed and consumes U as
+#   θ = π tanh(α_h U),  score = [(Q·K) cos θ + (Q⋆K) sin θ] / √d
+# so a leftover additive bias cannot leak back in.
+#
+# Not K2.  Do not resume n8_k6 / n8_k6_v2.  Wave 0 CE jobs stay untouched.
+#
+# max_steps caps the screen at 200k.  The LR schedule still spans
+# total_steps=1M, so evals line up with baseline / baseline_nopair / n8_k6_v2.
+_base: baseline.yaml
+
+arm: urot
+run_name: urot
+experiment: urot
+
+max_steps: 200000
+use_part_kernels: true
+part_kernels_attention: false

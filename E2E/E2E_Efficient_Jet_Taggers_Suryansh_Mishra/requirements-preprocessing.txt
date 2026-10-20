@@ -1,0 +1,21 @@
+# ROOT -> CSR `.pt` conversion only. Needed once, to build the dataset; never needed to train,
+# test, or analyse.
+#
+# Kept separate because these are the heaviest and least portable dependencies in the project
+# (uproot/awkward pull a large scientific stack) and nothing outside
+# `preprocessing/convert_jetclass_ragged_pt.py` imports them. Anyone reproducing the analysis from
+# existing `.pt` shards -- which is everyone except the person who first built them -- should not
+# have to install this.
+#
+#   pip install -r requirements.txt -r requirements-preprocessing.txt
+
+-r requirements.txt
+
+awkward>=2.9                # JetClass ROOT branches are jagged
+uproot>=5.1                 # pure-python ROOT reader, no ROOT install needed
+vector>=1.8                 # four-momentum arithmetic during conversion
+tqdm>=4.67                  # progress over 1000 train shards
+
+# Plotting, used only by `ablation/plot_metrics.py`. Listed here rather than in the core so a
+# headless training node does not need a plotting stack.
+matplotlib>=3.9

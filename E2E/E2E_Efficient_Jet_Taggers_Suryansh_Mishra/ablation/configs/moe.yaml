@@ -1,0 +1,22 @@
+# Arm 3/6 — Mixture-of-Experts feedforward.
+#
+# `flop_matched_full`: 4 experts, each exactly the size of the dense ParT FFN
+# (hidden 512), top-1 routing. Per-token FLOPs equal the baseline's while the arm
+# holds 4x the FFN parameters -- the "same compute, more capacity" comparison.
+#
+# Other presets in variants.MOE_PRESETS, selectable with
+#   --set moe_config=<name>
+#
+#   flop_matched_top2    1.00x FLOPs, 2.0x params, two half-width experts/token
+#   shared_flop_matched  1.00x FLOPs, 2.0x params, 1 always-on + 1 routed
+#   param_matched        0.50x FLOPs, 1.0x params, the strict param-matched arm
+_base: base.yaml
+
+arm: moe
+run_name: moe
+
+moe_config: flop_matched_full
+
+# Load-balancing coefficient. Without it the router collapses onto one expert
+# and the arm silently degrades to a smaller dense model.
+moe_aux_alpha: 0.01

@@ -1,0 +1,70 @@
+{
+  "_comment": "Matched ViT-384 baseline. D=192 L=12 h=4 -> 5550154 params. img_size=384/patch16 -> 24x24=576 tokens, token-matched to DepthViT's ~576-600. FIXED square: short-side resize -> center crop, the standard pipeline that discards ~44% of each image and upscales the survivor ~1.20x. Only difference vs the DepthViT arm is the preprocessing, not the token budget.",
+  "seed": 1234,
+  "data": {
+    "root": "/pscratch/sd/k/krish_m/imagewoof/imagewoof2",
+    "n_channels": 3,
+    "num_classes": 10,
+    "global_batch_size": 256,
+    "num_workers": 8,
+    "pin_memory": true,
+    "persistent_workers": true,
+    "rand_augment": null,
+    "label_smoothing": 0.0,
+    "dataset_size": 9025,
+    "format": "imagewoof_fixed",
+    "img_size": 384
+  },
+  "model": {
+    "img_size": 384,
+    "patch_size": 16,
+    "embed_dim": 192,
+    "num_layers": 12,
+    "num_heads": 4,
+    "mlp_ratio": 4.0,
+    "dropout": 0.0,
+    "attn_dropout": 0.0,
+    "compile": true,
+    "compile_mode": "default"
+  },
+  "trainer": {
+    "precision": "bf16-mixed",
+    "accumulate_grad_batches": 1,
+    "grad_clip_norm": 1.0,
+    "devices": 4,
+    "strategy": "ddp",
+    "log_every_n_steps": 10,
+    "val_check_interval": 1.0,
+    "default_root_dir": "/pscratch/sd/k/krish_m/depthvit/runs/imagewoof_vit384_5M_seed1234"
+  },
+  "checkpointing": {
+    "dir": "/pscratch/sd/k/krish_m/depthvit/runs/imagewoof_vit384_5M_seed1234/checkpoints/{phase}",
+    "monitor": "val_acc1",
+    "mode": "max",
+    "save_top_k": 1,
+    "every_n_epochs": 1
+  },
+  "phases": [
+    {
+      "name": "cls_finetune",
+      "type": "cls_finetune",
+      "epochs": 90,
+      "optim": {
+        "optimizer": "sgd",
+        "lr": 0.1,
+        "weight_decay": 0.0001,
+        "momentum": 0.9
+      },
+      "sched": {
+        "sched": "cosine",
+        "warmup_steps": 140,
+        "min_lr": 1e-06,
+        "epochs": 90
+      }
+    }
+  ],
+  "resume": {
+    "start_phase": 0,
+    "path": "auto"
+  }
+}

@@ -1,0 +1,22 @@
+# tied_k1_mor_wave2 run to the FULL 1M-step schedule instead of 200k, so the flat-then-decay LR
+# completes and the router is read on a finished recipe. Same model as tied_k1_mor_wave2 (one
+# unique block applied 8x, residual_scale_lambda 1.0, expert-choice router at capacity 0.5,
+# 746,435 params); only run_name and max_steps differ. Inherits everything else, including the
+# WHAT IT IS AND IS NOT and PRE-REGISTERED READOUT notes, from tied_k1_mor_wave2.yaml.
+#
+# MATCHED COMPARATOR (decided 2026-09-12): tied_k1_1M (Slurm 58152351). The LR schedule spans
+# total_steps=1M regardless of max_steps (schedule.py), so the two runs share block, lambda, seed
+# and LR at every step and differ only in router on/off. Read the accuracy delta at matched eval
+# steps (every 25k) and against the ~0.001-0.002 matched-step floor from baseline_s42/s43. The
+# primary readout is still the router's behaviour on the trained checkpoint (kept fraction vs pT
+# rank and dR per class), which needs no control. No baseline_wave2 control is queued; see the
+# CONTROL CAVEAT in tied_k1_1M.yaml, which applies here identically.
+#
+# Runtime: 200k steps took 3h40 on 4x A100 for tied_k1's architecture; the router adds a
+# gather/scatter per application, so budget ~19-20h for 1M and submit with -t 24:00:00
+# (gpu_regular max). --requeue + resume cover a pre-emption, with the documented caveat that
+# resume restores optimiser/scheduler/data cursor but not RNG state.
+_base: tied_k1_mor_wave2.yaml
+
+run_name: tied_k1_mor_1M
+max_steps: 1000000

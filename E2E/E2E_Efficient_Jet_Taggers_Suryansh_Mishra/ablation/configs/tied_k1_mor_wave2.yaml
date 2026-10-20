@@ -1,0 +1,35 @@
+# R4: tied_k1 + per-particle adaptive depth. One unique block applied 8x (as tied_k1_wave2), and at
+# every application an expert-choice router picks the top ceil(0.5 * n_valid) particles OF EACH JET
+# to receive that step's update; the rest pass through unchanged. 746,435 params = tied_k1_wave2
+# (746,306) + one Linear(128 -> 1) router (129). Compute per jet is UNCHANGED: the block still runs
+# on the full tensor and the update is gated afterwards, so this arm measures the MODELLING effect
+# of adaptive depth and delivers no speedup. Do not describe it as faster.
+#
+# WHAT IT IS AND IS NOT (2026-09-09 audit, A7). It is a custom hard top-k gate on a tied stack.
+# It is NOT the Mixture-of-Recursions algorithm of arXiv:2507.10524: no hierarchical filtering
+# (skipped particles may re-enter at a later step), one shared router with a constant capacity at
+# every step (the paper uses recursion-specific routers and decreasing capacities), and no
+# auxiliary balancing loss. Ties in the router score break toward lower particle index, i.e.
+# toward the leading-pT constituents, by a stable sort (see MoRRouter.__init__).
+#
+# PRE-REGISTERED READOUT. The result is the router's BEHAVIOUR on the trained checkpoint, which is
+# a within-model measurement and does not wait on sigma_seed: which particles are kept at each
+# application, plotted against pT rank and dR from the jet axis, per class. Hypothesis: kept
+# fraction decreases with pT rank; multi-prong classes (H->4q, t->bqq') keep more soft particles
+# than QCD. The accuracy delta against tied_k1_wave2 is a secondary readout and is subject to the
+# matched-step floor (~0.001-0.002 at 200k from the s42/s43 controls).
+#
+# COMPARE against tied_k1_wave2 (same block, same lambda, router on vs off) and baseline_wave2.
+# The router is verified to select particles WITHIN each jet on the real batch-first weaver layout
+# by test_mor_routes_particles_within_each_jet_in_the_built_model.
+_base: baseline.yaml
+
+arm: tied
+run_name: tied_k1_mor_wave2
+experiment: looped_wave2
+
+residual_scale_lambda: 1.0
+tie_num_unique: 1
+tie_strategy: cycle
+tie_mor_capacity: 0.5
+max_steps: 200000

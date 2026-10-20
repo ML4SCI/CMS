@@ -1,0 +1,11 @@
+# Arm 5/6 — Differential Attention V1 (arXiv:2410.05258).
+#
+# Each head computes two attention maps from doubled Q/K projections and
+# subtracts the second, scaled by a learnable per-head lambda, to cancel common-
+# mode attention noise. The doubled Q/K projections make this arm slightly larger
+# than the baseline (~1.07x params); that is inherent to the method, not a
+# configuration choice.
+_base: base.yaml
+
+arm: diff_v1
+run_name: diff_v1

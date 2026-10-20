@@ -1,0 +1,19 @@
+{
+  "model": "depthvit",
+  "channel_treatment": "asym",
+  "ckpt": "/pscratch/sd/k/krish_m/depthvit/runs/jets_150p_5M_90epoch_seed123/checkpoints/cls_finetune/epoch=epoch=89-step=step=112500-val_acc1=val_acc1=75.2247.ckpt",
+  "config": "configs/jets_150p_5M_90epoch_seed123.json",
+  "n_params": 5389691,
+  "flops": 1039132800,
+  "flops_method": "calflops",
+  "n_samples": 259072,
+  "top1_acc": 75.23854372529645,
+  "macro_auc": 0.9376019902959871,
+  "per_class_auc": {
+    "g": 0.9343506034698956,
+    "q": 0.919000981353167,
+    "W": 0.9455453147481852,
+    "Z": 0.9332115077500684,
+    "top": 0.9559015441586195
+  }
+}

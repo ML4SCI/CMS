@@ -1,0 +1,13 @@
+# MoE with 8 experts, top-2 routing, activated FFN under the dense baseline.
+#
+# Per token two experts of hidden 192 fire (2*192/512 = 0.75x FFN FLOPs).
+# Stored FFN capacity is 8*192/512 = 3x.  New run_name so this does not resume
+# the old top-1 flop_matched_full checkpoint in runs/moe/.
+_base: base.yaml
+
+arm: moe
+run_name: moe_e8_top2
+experiment: moe_e8_top2
+
+moe_config: e8_top2_subflop
+moe_aux_alpha: 0.01

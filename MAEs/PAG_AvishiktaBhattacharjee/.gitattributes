@@ -1,0 +1,2 @@
+# SLURM job scripts must keep LF line endings (sbatch rejects CRLF)
+*.sh text eol=lf

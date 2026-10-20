@@ -1,0 +1,72 @@
+{
+  "_comment": "Matched ViT baseline for CIFAR-100, seed 1234, paired with cifar100_dvit_5M_90epoch_seed1234.json. embed_dim=192/L=12/heads=3 -> 5,380,132 params (verified), 1.06% ABOVE DepthViT's 5,323,575. Tokenization identical: patch_size=4 on 32x32 -> 64 patches (+1 CLS). Entry point is vit_small_trainer.py.",
+  "seed": 1234,
+  "data": {
+    "format": "cifar100",
+    "root": "/pscratch/sd/k/krish_m/datasets/cifar100",
+    "img_size": 32,
+    "n_channels": 3,
+    "num_classes": 100,
+    "global_batch_size": 512,
+    "num_workers": 8,
+    "pin_memory": true,
+    "persistent_workers": true,
+    "rand_augment": null,
+    "label_smoothing": 0.0,
+    "dataset_size": 50000
+  },
+  "model": {
+    "img_size": 32,
+    "patch_size": 4,
+    "embed_dim": 192,
+    "num_layers": 12,
+    "num_heads": 3,
+    "mlp_ratio": 4.0,
+    "dropout": 0.0,
+    "attn_dropout": 0.0,
+    "compile": true,
+    "compile_mode": "default"
+  },
+  "trainer": {
+    "_comment": "strategy=ddp (no unused params for plain ViT). accumulate_grad_batches=1.",
+    "precision": "bf16-mixed",
+    "accumulate_grad_batches": 1,
+    "grad_clip_norm": 1.0,
+    "devices": 4,
+    "strategy": "ddp",
+    "log_every_n_steps": 20,
+    "val_check_interval": 1.0,
+    "default_root_dir": "/pscratch/sd/k/krish_m/depthvit/runs/cifar100_vit192_5M_90epoch_seed1234"
+  },
+  "checkpointing": {
+    "dir": "/pscratch/sd/k/krish_m/depthvit/runs/cifar100_vit192_5M_90epoch_seed1234/checkpoints/{phase}",
+    "monitor": "val_acc1",
+    "mode": "max",
+    "save_top_k": 1,
+    "every_n_epochs": 1
+  },
+  "phases": [
+    {
+      "name": "cls_finetune",
+      "type": "cls_finetune",
+      "epochs": 90,
+      "optim": {
+        "optimizer": "sgd",
+        "lr": 0.1,
+        "weight_decay": 0.0001,
+        "momentum": 0.9
+      },
+      "sched": {
+        "sched": "cosine",
+        "warmup_steps": 400,
+        "min_lr": 1e-06,
+        "epochs": 90
+      },
+      "_comment": "90 epochs, matching every other run. warmup_steps=400, same fraction as jets."
+    }
+  ],
+  "resume": {
+    "start_phase": 0,
+    "path": null
+  }
+}

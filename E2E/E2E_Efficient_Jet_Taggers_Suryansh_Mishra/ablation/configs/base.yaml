@@ -1,0 +1,68 @@
+# Shared settings for every ablation arm.
+#
+# Per-arm files override only `arm`, `run_name`, and anything the arm genuinely
+# requires (LLoCa must run in fp32). Everything else is held fixed on purpose:
+# if the arms differed in optimizer, schedule or batch size, an architecture
+# effect could not be separated from a tuning effect.
+#
+# Data locations are left empty so they must be supplied explicitly, either in a
+# site config or with `--set train_pt_dir=... --set val_pt_dir=...`.
+
+train_pt_dir: ""
+val_pt_dir: ""
+norm_stats_path: ""
+
+# --- model (ParT paper configuration, 2.14M params) ---
+input_dim: 16
+num_classes: 10
+num_layers: 8
+num_cls_layers: 2
+num_heads: 8
+embed_dims: [128, 512, 128]
+pair_embed_dims: [64, 64, 64]
+dropout: 0.1
+expansion_factor: 4
+
+# --- optimization ---
+# 1e6 steps; global batch 1024 = 4 GPUs x 256 (bf16). Larger than the ParT
+# paper's 512 to fill A100 capacity (~3 GiB was used at batch 128).
+total_steps: 1000000
+batch_size: 256
+grad_accum_steps: 1
+lr: 0.001
+weight_decay: 0.0
+radam_betas: [0.95, 0.999]
+radam_eps: 0.00001
+lookahead_steps: 6
+lookahead_alpha: 0.5
+lr_constant_fraction: 0.7
+lr_final_factor: 0.01
+warmup_steps: 2000
+grad_clip: 1.0
+
+precision: bf16
+allow_tf32: true
+compile_model: false
+
+# --- data loading (Perlmutter: 32 logical CPUs per task) ---
+num_workers: 8
+prefetch_factor: 4
+# Every local batch contains a randomized, near-equal share of all 10 classes.
+# Required because each source .pt shard contains only one class.
+class_balanced_train: true
+# Full val_5M (5M jets). A 400k cap was class-skewed: shards are one class per
+# file, so the coherent sampler filled the budget from HToBB_* only → NaN AUC/rej.
+val_max_jets: 5000000
+
+# --- evaluation and logging ---
+eval_every: 25000
+log_every: 200
+checkpoint_every: 10000
+output_dir: runs
+rejection_efficiencies: [0.5, 0.99]
+save_eval_predictions: true
+
+# Experiment label — logged in metrics.jsonl / provenance.json (not a path prefix).
+experiment: part_ablation_v3
+
+seed: 42

@@ -1,0 +1,386 @@
+Requirement already satisfied: lgatr==1.4.4 in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (1.4.4)
+Requirement already satisfied: uproot in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (5.7.6)
+Requirement already satisfied: awkward in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (2.14.0)
+Requirement already satisfied: tqdm in /global/common/software/nersc/pe/conda-envs/26.8.1/python-3.13/nersc-python/lib/python3.13/site-packages (4.70.0)
+Requirement already satisfied: vector in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (1.8.1)
+Requirement already satisfied: torch>=2.1 in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from lgatr==1.4.4) (2.14.0)
+Requirement already satisfied: numpy in /global/common/software/nersc/pe/conda-envs/26.8.1/python-3.13/nersc-python/lib/python3.13/site-packages (from lgatr==1.4.4) (2.5.2)
+Requirement already satisfied: einops in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from lgatr==1.4.4) (0.8.2)
+Requirement already satisfied: opt_einsum in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from lgatr==1.4.4) (3.4.0)
+Requirement already satisfied: cramjam>=2.5.0 in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from uproot) (2.12.1)
+Requirement already satisfied: fsspec!=2026.2.0 in /global/common/software/nersc/pe/conda-envs/26.8.1/python-3.13/nersc-python/lib/python3.13/site-packages (from uproot) (2026.6.0)
+Requirement already satisfied: packaging in /global/common/software/nersc/pe/conda-envs/26.8.1/python-3.13/nersc-python/lib/python3.13/site-packages (from uproot) (26.3)
+Requirement already satisfied: xxhash in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from uproot) (4.0.1)
+Requirement already satisfied: awkward-cpp==57 in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from awkward) (57)
+Requirement already satisfied: filelock in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from torch>=2.1->lgatr==1.4.4) (4.0.0)
+Requirement already satisfied: typing-extensions>=4.10.0 in /global/common/software/nersc/pe/conda-envs/26.8.1/python-3.13/nersc-python/lib/python3.13/site-packages (from torch>=2.1->lgatr==1.4.4) (4.16.0)
+Requirement already satisfied: setuptools>=77.0.3 in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from torch>=2.1->lgatr==1.4.4) (84.0.0)
+Requirement already satisfied: sympy>=1.13.3 in /global/common/software/nersc/pe/conda-envs/26.8.1/python-3.13/nersc-python/lib/python3.13/site-packages (from torch>=2.1->lgatr==1.4.4) (1.14.0)
+Requirement already satisfied: networkx>=2.5.1 in /global/common/software/nersc/pe/conda-envs/26.8.1/python-3.13/nersc-python/lib/python3.13/site-packages (from torch>=2.1->lgatr==1.4.4) (3.6.1)
+Requirement already satisfied: jinja2 in /global/common/software/nersc/pe/conda-envs/26.8.1/python-3.13/nersc-python/lib/python3.13/site-packages (from torch>=2.1->lgatr==1.4.4) (3.1.6)
+Requirement already satisfied: cuda-toolkit==13.0.3 in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.1->lgatr==1.4.4) (13.0.3.0)
+Requirement already satisfied: cuda-bindings<14,>=13.0.3 in /global/common/software/nersc/pe/conda-envs/26.8.1/python-3.13/nersc-python/lib/python3.13/site-packages (from torch>=2.1->lgatr==1.4.4) (13.3.1)
+Requirement already satisfied: nvidia-cudnn-cu13==9.24.0.43 in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from torch>=2.1->lgatr==1.4.4) (9.24.0.43)
+Requirement already satisfied: nvidia-cusparselt-cu13==0.8.1 in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from torch>=2.1->lgatr==1.4.4) (0.8.1)
+Requirement already satisfied: nvidia-nccl-cu13==2.30.7 in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from torch>=2.1->lgatr==1.4.4) (2.30.7)
+Requirement already satisfied: nvidia-nvshmem-cu13==3.4.5 in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from torch>=2.1->lgatr==1.4.4) (3.4.5)
+Requirement already satisfied: triton~=3.8.0 in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from torch>=2.1->lgatr==1.4.4) (3.8.0)
+Requirement already satisfied: nvidia-cublas==13.1.1.3.* in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.1->lgatr==1.4.4) (13.1.1.3)
+Requirement already satisfied: nvidia-cuda-nvrtc==13.0.88.* in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.1->lgatr==1.4.4) (13.0.88)
+Requirement already satisfied: nvidia-cuda-runtime==13.0.96.* in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.1->lgatr==1.4.4) (13.0.96)
+Requirement already satisfied: nvidia-cufft==12.0.0.61.* in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.1->lgatr==1.4.4) (12.0.0.61)
+Requirement already satisfied: nvidia-nvjitlink<14,>=13.0.88 in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.1->lgatr==1.4.4) (13.4.92)
+Requirement already satisfied: nvidia-cufile==1.15.1.6.* in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.1->lgatr==1.4.4) (1.15.1.6)
+Requirement already satisfied: nvidia-cuda-cupti==13.0.85.* in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.1->lgatr==1.4.4) (13.0.85)
+Requirement already satisfied: nvidia-curand==10.4.0.35.* in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.1->lgatr==1.4.4) (10.4.0.35)
+Requirement already satisfied: nvidia-cusolver==12.0.4.66.* in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.1->lgatr==1.4.4) (12.0.4.66)
+Requirement already satisfied: nvidia-cusparse==12.6.3.3.* in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.1->lgatr==1.4.4) (12.6.3.3)
+Requirement already satisfied: nvidia-nvtx==13.0.85.* in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.1->lgatr==1.4.4) (13.0.85)
+Requirement already satisfied: cuda-pathfinder>=1.4.2 in /global/common/software/nersc/pe/conda-envs/26.8.1/python-3.13/nersc-python/lib/python3.13/site-packages (from cuda-bindings<14,>=13.0.3->torch>=2.1->lgatr==1.4.4) (1.8.0)
+Requirement already satisfied: mpmath<1.5,>=1.1.0 in /global/common/software/nersc/pe/conda-envs/26.8.1/python-3.13/nersc-python/lib/python3.13/site-packages (from sympy>=1.13.3->torch>=2.1->lgatr==1.4.4) (1.4.1)
+Requirement already satisfied: MarkupSafe>=2.0 in /global/common/software/nersc/pe/conda-envs/26.8.1/python-3.13/nersc-python/lib/python3.13/site-packages (from jinja2->torch>=2.1->lgatr==1.4.4) (3.0.3)
+torch 2.14.0+cu130 | cuda True | lgatr 1.4.4
+Node list: nid004024
+Sat Sep 19 18:52:03 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 580.178.04             Driver Version: 580.178.04     CUDA Version: 13.2     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA A100-SXM4-40GB          On  |   00000000:41:00.0 Off |                    0 |
+| N/A   32C    P0             63W /  400W |       0MiB /  40960MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+Pretrained model: logs/LorentzParT/best/pid1132735_20260919-081613.pt
+pt_mean: 92.70594787597656, pt_std: 105.79940032958984
+eta_mean: -0.0011634617112576962, eta_std: 0.9182537198066711
+phi_mean: -0.0006678675417788327, phi_std: 1.8138455152511597
+E_mean: 133.98565673828125, E_std: 167.72598266601562
+shared pT/E scale: 133.98565673828125
+========================================================================
+[__init__] MASS-GATE NORMALISATION REGISTERED
+========================================================================
+  normalize flags        : [True, False, False, True]
+  shared pT/E scale s    : 133.985657   (one constant for BOTH, keeps p a 4-vector)
+  feature             mean           std       scale     shift
+  pT             92.705948    105.799400    133.9857    0.0000
+  eta            -0.001163      0.918254      1.0000    0.0000
+  phi            -0.000668      1.813846      1.0000    0.0000
+  energy        133.985657    167.725983    133.9857    0.0000
+
+  round-trip check on a 100.00 GeV, eta=0.4 constituent:
+                                  pT [GeV]     E [GeV]
+    truth                           100.00      108.11
+    x*scale + shift                 100.00      108.11
+    normalised m^2 (must be >= 0)          : -2.220446e-16
+  OK: denormalize inverts the dataset transform and the signature holds.
+========================================================================
+[weights] logs/LorentzParT/best/pid1132735_20260919-081613.pt: loaded 165 encoder tensors, 0 missing, 56 unexpected
+[weights]   unexpected (ignored), e.g. ['encoder.0.m_freqs', 'encoder.0.physics_proj.weight', 'encoder.0.physics_proj.bias', 'encoder.0.mass_proj.weight', 'encoder.0.mass_proj.bias']
+[processor] _get_interaction input : NORMALIZED by the shared pT/E scale
+[processor] U[...,3] = ln(m_ij^2)  : 0.0% of valid pairs clamped to ln(1e-8)=-18.42
+[processor] U[...,3] spread        : std 2.0737 over 97528 valid pairs
+[processor] -> pairwise mass channel is live (m_ij^2 > 0, sign preserved).
+[processor] the GLOBAL mass gate uses x_raw (GeV) instead.
+------------------------------------------------------------------------
+[forward 1/2] INVARIANT-MASS GATE  (units: GeV)
+  x_raw supplied to processor : True
+  constituent pT   med/max    :     5.80 /   529.33
+  constituent E    med/max    :     8.33 /  1189.62
+  jet mass  q25/med/q75       :    80.78 /   100.69 /   123.62
+  jet mass  min/max           :    34.45 /   244.33
+  fraction clamped at m^2<=0  :   0.0000
+  VERDICT: masses are physical. m_W=80.4  m_Z=91.2  m_H=125.3  m_t=172.5 GeV
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+[forward 2/2] INVARIANT-MASS GATE  (units: GeV)
+  x_raw supplied to processor : True
+  constituent pT   med/max    :     5.95 /   450.32
+  constituent E    med/max    :     8.54 /   769.31
+  jet mass  q25/med/q75       :    91.28 /   114.59 /   129.29
+  jet mass  min/max           :    14.00 /   275.64
+  fraction clamped at m^2<=0  :   0.0000
+  VERDICT: masses are physical. m_W=80.4  m_Z=91.2  m_H=125.3  m_t=172.5 GeV
+------------------------------------------------------------------------
+step: 1000/250000 | train_loss: 1.6944 | train_metric: 0.3779
+step: 2000/250000 | train_loss: 1.4668 | train_metric: 0.4662
+step: 3000/250000 | train_loss: 1.3673 | train_metric: 0.5043
+step: 4000/250000 | train_loss: 1.3068 | train_metric: 0.5269
+step: 5000/250000 | train_loss: 1.2659 | train_metric: 0.5425
+step: 6000/250000 | train_loss: 1.2356 | train_metric: 0.5539
+step: 7000/250000 | train_loss: 1.2124 | train_metric: 0.5628
+step: 8000/250000 | train_loss: 1.1927 | train_metric: 0.5701
+step: 9000/250000 | train_loss: 1.1768 | train_metric: 0.5759
+step: 10000/250000 | train_loss: 1.1638 | train_metric: 0.5805
+step: 11000/250000 | train_loss: 1.1512 | train_metric: 0.5853
+step: 12000/250000 | train_loss: 1.1404 | train_metric: 0.5894
+epoch: 1/20 | val_loss: 1.0012 | val_metric: 0.6369
+step: 13000/250000 | train_loss: 1.0165 | train_metric: 0.6348
+step: 14000/250000 | train_loss: 1.0131 | train_metric: 0.6377
+step: 15000/250000 | train_loss: 1.0079 | train_metric: 0.6398
+step: 16000/250000 | train_loss: 1.0044 | train_metric: 0.6409
+step: 17000/250000 | train_loss: 1.0005 | train_metric: 0.6424
+step: 18000/250000 | train_loss: 0.9980 | train_metric: 0.6435
+step: 19000/250000 | train_loss: 0.9956 | train_metric: 0.6440
+step: 20000/250000 | train_loss: 0.9932 | train_metric: 0.6448
+step: 21000/250000 | train_loss: 0.9908 | train_metric: 0.6457
+step: 22000/250000 | train_loss: 0.9892 | train_metric: 0.6464
+step: 23000/250000 | train_loss: 0.9872 | train_metric: 0.6471
+step: 24000/250000 | train_loss: 0.9856 | train_metric: 0.6478
+step: 25000/250000 | train_loss: 0.9832 | train_metric: 0.6486
+epoch: 2/20 | val_loss: 0.9335 | val_metric: 0.6682
+step: 26000/250000 | train_loss: 0.9582 | train_metric: 0.6574
+step: 27000/250000 | train_loss: 0.9602 | train_metric: 0.6562
+step: 28000/250000 | train_loss: 0.9587 | train_metric: 0.6563
+step: 29000/250000 | train_loss: 0.9565 | train_metric: 0.6574
+step: 30000/250000 | train_loss: 0.9543 | train_metric: 0.6583
+step: 31000/250000 | train_loss: 0.9523 | train_metric: 0.6590
+step: 32000/250000 | train_loss: 0.9510 | train_metric: 0.6598
+step: 33000/250000 | train_loss: 0.9501 | train_metric: 0.6605
+step: 34000/250000 | train_loss: 0.9497 | train_metric: 0.6608
+step: 35000/250000 | train_loss: 0.9496 | train_metric: 0.6608
+step: 36000/250000 | train_loss: 0.9481 | train_metric: 0.6614
+step: 37000/250000 | train_loss: 0.9471 | train_metric: 0.6618
+epoch: 3/20 | val_loss: 0.9213 | val_metric: 0.6725
+step: 38000/250000 | train_loss: 0.9306 | train_metric: 0.6701
+step: 39000/250000 | train_loss: 0.9298 | train_metric: 0.6688
+step: 40000/250000 | train_loss: 0.9312 | train_metric: 0.6678
+step: 41000/250000 | train_loss: 0.9293 | train_metric: 0.6686
+step: 42000/250000 | train_loss: 0.9300 | train_metric: 0.6680
+step: 43000/250000 | train_loss: 0.9286 | train_metric: 0.6686
+step: 44000/250000 | train_loss: 0.9279 | train_metric: 0.6688
+step: 45000/250000 | train_loss: 0.9276 | train_metric: 0.6692
+step: 46000/250000 | train_loss: 0.9276 | train_metric: 0.6691
+step: 47000/250000 | train_loss: 0.9268 | train_metric: 0.6693
+step: 48000/250000 | train_loss: 0.9268 | train_metric: 0.6693
+step: 49000/250000 | train_loss: 0.9258 | train_metric: 0.6697
+step: 50000/250000 | train_loss: 0.9254 | train_metric: 0.6698
+epoch: 4/20 | val_loss: 0.9140 | val_metric: 0.6754
+step: 51000/250000 | train_loss: 0.9116 | train_metric: 0.6751
+step: 52000/250000 | train_loss: 0.9129 | train_metric: 0.6749
+step: 53000/250000 | train_loss: 0.9137 | train_metric: 0.6744
+step: 54000/250000 | train_loss: 0.9129 | train_metric: 0.6744
+step: 55000/250000 | train_loss: 0.9120 | train_metric: 0.6747
+step: 56000/250000 | train_loss: 0.9113 | train_metric: 0.6747
+step: 57000/250000 | train_loss: 0.9106 | train_metric: 0.6750
+step: 58000/250000 | train_loss: 0.9110 | train_metric: 0.6749
+step: 59000/250000 | train_loss: 0.9116 | train_metric: 0.6749
+step: 60000/250000 | train_loss: 0.9110 | train_metric: 0.6751
+step: 61000/250000 | train_loss: 0.9108 | train_metric: 0.6753
+step: 62000/250000 | train_loss: 0.9097 | train_metric: 0.6759
+epoch: 5/20 | val_loss: 0.9196 | val_metric: 0.6727
+step: 63000/250000 | train_loss: 0.9016 | train_metric: 0.6789
+step: 64000/250000 | train_loss: 0.9023 | train_metric: 0.6790
+step: 65000/250000 | train_loss: 0.8999 | train_metric: 0.6797
+step: 66000/250000 | train_loss: 0.8999 | train_metric: 0.6791
+step: 67000/250000 | train_loss: 0.8988 | train_metric: 0.6791
+step: 68000/250000 | train_loss: 0.8991 | train_metric: 0.6790
+step: 69000/250000 | train_loss: 0.8995 | train_metric: 0.6789
+step: 70000/250000 | train_loss: 0.8994 | train_metric: 0.6792
+step: 71000/250000 | train_loss: 0.8994 | train_metric: 0.6792
+step: 72000/250000 | train_loss: 0.8992 | train_metric: 0.6794
+step: 73000/250000 | train_loss: 0.8987 | train_metric: 0.6793
+step: 74000/250000 | train_loss: 0.8983 | train_metric: 0.6797
+step: 75000/250000 | train_loss: 0.8978 | train_metric: 0.6798
+epoch: 6/20 | val_loss: 0.8899 | val_metric: 0.6856
+step: 76000/250000 | train_loss: 0.8861 | train_metric: 0.6830
+step: 77000/250000 | train_loss: 0.8859 | train_metric: 0.6836
+step: 78000/250000 | train_loss: 0.8865 | train_metric: 0.6838
+step: 79000/250000 | train_loss: 0.8872 | train_metric: 0.6836
+step: 80000/250000 | train_loss: 0.8852 | train_metric: 0.6842
+step: 81000/250000 | train_loss: 0.8843 | train_metric: 0.6848
+step: 82000/250000 | train_loss: 0.8845 | train_metric: 0.6848
+step: 83000/250000 | train_loss: 0.8850 | train_metric: 0.6846
+step: 84000/250000 | train_loss: 0.8862 | train_metric: 0.6842
+step: 85000/250000 | train_loss: 0.8875 | train_metric: 0.6839
+step: 86000/250000 | train_loss: 0.8874 | train_metric: 0.6837
+step: 87000/250000 | train_loss: 0.8875 | train_metric: 0.6837
+epoch: 7/20 | val_loss: 0.8838 | val_metric: 0.6878
+step: 88000/250000 | train_loss: 0.8845 | train_metric: 0.6858
+step: 89000/250000 | train_loss: 0.8844 | train_metric: 0.6842
+step: 90000/250000 | train_loss: 0.8827 | train_metric: 0.6850
+step: 91000/250000 | train_loss: 0.8805 | train_metric: 0.6863
+step: 92000/250000 | train_loss: 0.8805 | train_metric: 0.6861
+step: 93000/250000 | train_loss: 0.8793 | train_metric: 0.6868
+step: 94000/250000 | train_loss: 0.8799 | train_metric: 0.6863
+step: 95000/250000 | train_loss: 0.8796 | train_metric: 0.6863
+step: 96000/250000 | train_loss: 0.8795 | train_metric: 0.6864
+step: 97000/250000 | train_loss: 0.8791 | train_metric: 0.6865
+step: 98000/250000 | train_loss: 0.8791 | train_metric: 0.6866
+step: 99000/250000 | train_loss: 0.8790 | train_metric: 0.6867
+step: 100000/250000 | train_loss: 0.8793 | train_metric: 0.6866
+epoch: 8/20 | val_loss: 0.8690 | val_metric: 0.6932
+step: 101000/250000 | train_loss: 0.8691 | train_metric: 0.6921
+step: 102000/250000 | train_loss: 0.8705 | train_metric: 0.6902
+step: 103000/250000 | train_loss: 0.8708 | train_metric: 0.6901
+step: 104000/250000 | train_loss: 0.8695 | train_metric: 0.6903
+step: 105000/250000 | train_loss: 0.8710 | train_metric: 0.6895
+step: 106000/250000 | train_loss: 0.8709 | train_metric: 0.6897
+step: 107000/250000 | train_loss: 0.8712 | train_metric: 0.6897
+step: 108000/250000 | train_loss: 0.8706 | train_metric: 0.6898
+step: 109000/250000 | train_loss: 0.8703 | train_metric: 0.6899
+step: 110000/250000 | train_loss: 0.8712 | train_metric: 0.6895
+step: 111000/250000 | train_loss: 0.8708 | train_metric: 0.6897
+step: 112000/250000 | train_loss: 0.8707 | train_metric: 0.6898
+epoch: 9/20 | val_loss: 0.8750 | val_metric: 0.6903
+step: 113000/250000 | train_loss: 0.8607 | train_metric: 0.6959
+step: 114000/250000 | train_loss: 0.8651 | train_metric: 0.6903
+step: 115000/250000 | train_loss: 0.8658 | train_metric: 0.6908
+step: 116000/250000 | train_loss: 0.8644 | train_metric: 0.6915
+step: 117000/250000 | train_loss: 0.8636 | train_metric: 0.6922
+step: 118000/250000 | train_loss: 0.8640 | train_metric: 0.6921
+step: 119000/250000 | train_loss: 0.8646 | train_metric: 0.6917
+step: 120000/250000 | train_loss: 0.8638 | train_metric: 0.6920
+step: 121000/250000 | train_loss: 0.8644 | train_metric: 0.6917
+step: 122000/250000 | train_loss: 0.8652 | train_metric: 0.6916
+step: 123000/250000 | train_loss: 0.8654 | train_metric: 0.6914
+step: 124000/250000 | train_loss: 0.8645 | train_metric: 0.6917
+step: 125000/250000 | train_loss: 0.8648 | train_metric: 0.6916
+epoch: 10/20 | val_loss: 0.8746 | val_metric: 0.6917
+step: 126000/250000 | train_loss: 0.8535 | train_metric: 0.6962
+step: 127000/250000 | train_loss: 0.8587 | train_metric: 0.6948
+step: 128000/250000 | train_loss: 0.8596 | train_metric: 0.6937
+step: 129000/250000 | train_loss: 0.8594 | train_metric: 0.6936
+step: 130000/250000 | train_loss: 0.8591 | train_metric: 0.6937
+step: 131000/250000 | train_loss: 0.8591 | train_metric: 0.6937
+step: 132000/250000 | train_loss: 0.8590 | train_metric: 0.6938
+step: 133000/250000 | train_loss: 0.8591 | train_metric: 0.6938
+step: 134000/250000 | train_loss: 0.8597 | train_metric: 0.6938
+step: 135000/250000 | train_loss: 0.8590 | train_metric: 0.6940
+step: 136000/250000 | train_loss: 0.8589 | train_metric: 0.6940
+step: 137000/250000 | train_loss: 0.8587 | train_metric: 0.6942
+epoch: 11/20 | val_loss: 0.8626 | val_metric: 0.6961
+step: 138000/250000 | train_loss: 0.8555 | train_metric: 0.6920
+step: 139000/250000 | train_loss: 0.8532 | train_metric: 0.6945
+step: 140000/250000 | train_loss: 0.8538 | train_metric: 0.6944
+step: 141000/250000 | train_loss: 0.8550 | train_metric: 0.6941
+step: 142000/250000 | train_loss: 0.8540 | train_metric: 0.6952
+step: 143000/250000 | train_loss: 0.8546 | train_metric: 0.6951
+step: 144000/250000 | train_loss: 0.8546 | train_metric: 0.6954
+step: 145000/250000 | train_loss: 0.8540 | train_metric: 0.6955
+step: 146000/250000 | train_loss: 0.8531 | train_metric: 0.6960
+step: 147000/250000 | train_loss: 0.8541 | train_metric: 0.6957
+step: 148000/250000 | train_loss: 0.8536 | train_metric: 0.6959
+step: 149000/250000 | train_loss: 0.8527 | train_metric: 0.6961
+step: 150000/250000 | train_loss: 0.8529 | train_metric: 0.6962
+epoch: 12/20 | val_loss: 0.8613 | val_metric: 0.6957
+step: 151000/250000 | train_loss: 0.8449 | train_metric: 0.6986
+step: 152000/250000 | train_loss: 0.8418 | train_metric: 0.6995
+step: 153000/250000 | train_loss: 0.8418 | train_metric: 0.6999
+step: 154000/250000 | train_loss: 0.8439 | train_metric: 0.6990
+step: 155000/250000 | train_loss: 0.8443 | train_metric: 0.6989
+step: 156000/250000 | train_loss: 0.8442 | train_metric: 0.6988
+step: 157000/250000 | train_loss: 0.8446 | train_metric: 0.6988
+step: 158000/250000 | train_loss: 0.8453 | train_metric: 0.6986
+step: 159000/250000 | train_loss: 0.8457 | train_metric: 0.6984
+step: 160000/250000 | train_loss: 0.8462 | train_metric: 0.6980
+step: 161000/250000 | train_loss: 0.8468 | train_metric: 0.6979
+step: 162000/250000 | train_loss: 0.8473 | train_metric: 0.6978
+epoch: 13/20 | val_loss: 0.8768 | val_metric: 0.6898
+step: 163000/250000 | train_loss: 0.8405 | train_metric: 0.6986
+step: 164000/250000 | train_loss: 0.8421 | train_metric: 0.6988
+step: 165000/250000 | train_loss: 0.8418 | train_metric: 0.6992
+step: 166000/250000 | train_loss: 0.8394 | train_metric: 0.6997
+step: 167000/250000 | train_loss: 0.8395 | train_metric: 0.6999
+step: 168000/250000 | train_loss: 0.8401 | train_metric: 0.7001
+step: 169000/250000 | train_loss: 0.8414 | train_metric: 0.6996
+step: 170000/250000 | train_loss: 0.8416 | train_metric: 0.6997
+step: 171000/250000 | train_loss: 0.8416 | train_metric: 0.6996
+step: 172000/250000 | train_loss: 0.8419 | train_metric: 0.6996
+step: 173000/250000 | train_loss: 0.8420 | train_metric: 0.6998
+step: 174000/250000 | train_loss: 0.8421 | train_metric: 0.6998
+step: 175000/250000 | train_loss: 0.8417 | train_metric: 0.7000
+epoch: 14/20 | val_loss: 0.8732 | val_metric: 0.6887
+step: 176000/250000 | train_loss: 0.8338 | train_metric: 0.7017
+step: 177000/250000 | train_loss: 0.8363 | train_metric: 0.7013
+step: 178000/250000 | train_loss: 0.8355 | train_metric: 0.7019
+step: 179000/250000 | train_loss: 0.8368 | train_metric: 0.7016
+step: 180000/250000 | train_loss: 0.8368 | train_metric: 0.7015
+step: 181000/250000 | train_loss: 0.8362 | train_metric: 0.7018
+step: 182000/250000 | train_loss: 0.8364 | train_metric: 0.7015
+step: 183000/250000 | train_loss: 0.8363 | train_metric: 0.7019
+step: 184000/250000 | train_loss: 0.8368 | train_metric: 0.7018
+step: 185000/250000 | train_loss: 0.8366 | train_metric: 0.7018
+step: 186000/250000 | train_loss: 0.8368 | train_metric: 0.7017
+step: 187000/250000 | train_loss: 0.8372 | train_metric: 0.7016
+epoch: 15/20 | val_loss: 0.8545 | val_metric: 0.6980
+step: 188000/250000 | train_loss: 0.8295 | train_metric: 0.7027
+step: 189000/250000 | train_loss: 0.8326 | train_metric: 0.7030
+step: 190000/250000 | train_loss: 0.8322 | train_metric: 0.7028
+step: 191000/250000 | train_loss: 0.8319 | train_metric: 0.7033
+step: 192000/250000 | train_loss: 0.8316 | train_metric: 0.7034
+step: 193000/250000 | train_loss: 0.8310 | train_metric: 0.7040
+step: 194000/250000 | train_loss: 0.8311 | train_metric: 0.7041
+step: 195000/250000 | train_loss: 0.8313 | train_metric: 0.7037
+step: 196000/250000 | train_loss: 0.8315 | train_metric: 0.7034
+step: 197000/250000 | train_loss: 0.8318 | train_metric: 0.7031
+step: 198000/250000 | train_loss: 0.8317 | train_metric: 0.7032
+step: 199000/250000 | train_loss: 0.8321 | train_metric: 0.7032
+step: 200000/250000 | train_loss: 0.8319 | train_metric: 0.7033
+epoch: 16/20 | val_loss: 0.8719 | val_metric: 0.6905
+step: 201000/250000 | train_loss: 0.8206 | train_metric: 0.7073
+step: 202000/250000 | train_loss: 0.8239 | train_metric: 0.7055
+step: 203000/250000 | train_loss: 0.8245 | train_metric: 0.7050
+step: 204000/250000 | train_loss: 0.8243 | train_metric: 0.7052
+step: 205000/250000 | train_loss: 0.8245 | train_metric: 0.7053
+step: 206000/250000 | train_loss: 0.8251 | train_metric: 0.7051
+step: 207000/250000 | train_loss: 0.8255 | train_metric: 0.7052
+step: 208000/250000 | train_loss: 0.8262 | train_metric: 0.7050
+step: 209000/250000 | train_loss: 0.8266 | train_metric: 0.7046
+step: 210000/250000 | train_loss: 0.8269 | train_metric: 0.7045
+step: 211000/250000 | train_loss: 0.8273 | train_metric: 0.7046
+step: 212000/250000 | train_loss: 0.8272 | train_metric: 0.7046
+epoch: 17/20 | val_loss: 0.8618 | val_metric: 0.6947
+step: 213000/250000 | train_loss: 0.8245 | train_metric: 0.7017
+step: 214000/250000 | train_loss: 0.8228 | train_metric: 0.7051
+step: 215000/250000 | train_loss: 0.8244 | train_metric: 0.7052
+step: 216000/250000 | train_loss: 0.8225 | train_metric: 0.7057
+step: 217000/250000 | train_loss: 0.8237 | train_metric: 0.7057
+step: 218000/250000 | train_loss: 0.8229 | train_metric: 0.7066
+step: 219000/250000 | train_loss: 0.8228 | train_metric: 0.7064
+step: 220000/250000 | train_loss: 0.8236 | train_metric: 0.7059
+step: 221000/250000 | train_loss: 0.8233 | train_metric: 0.7060
+step: 222000/250000 | train_loss: 0.8233 | train_metric: 0.7062
+step: 223000/250000 | train_loss: 0.8225 | train_metric: 0.7066
+step: 224000/250000 | train_loss: 0.8227 | train_metric: 0.7065
+step: 225000/250000 | train_loss: 0.8230 | train_metric: 0.7064
+epoch: 18/20 | val_loss: 0.8609 | val_metric: 0.6954
+step: 226000/250000 | train_loss: 0.8174 | train_metric: 0.7086
+step: 227000/250000 | train_loss: 0.8147 | train_metric: 0.7090
+step: 228000/250000 | train_loss: 0.8138 | train_metric: 0.7098
+step: 229000/250000 | train_loss: 0.8140 | train_metric: 0.7097
+step: 230000/250000 | train_loss: 0.8151 | train_metric: 0.7090
+step: 231000/250000 | train_loss: 0.8164 | train_metric: 0.7085
+step: 232000/250000 | train_loss: 0.8169 | train_metric: 0.7084
+step: 233000/250000 | train_loss: 0.8168 | train_metric: 0.7082
+step: 234000/250000 | train_loss: 0.8174 | train_metric: 0.7078
+step: 235000/250000 | train_loss: 0.8174 | train_metric: 0.7076
+step: 236000/250000 | train_loss: 0.8177 | train_metric: 0.7076
+step: 237000/250000 | train_loss: 0.8176 | train_metric: 0.7077
+epoch: 19/20 | val_loss: 0.8614 | val_metric: 0.6952
+step: 238000/250000 | train_loss: 0.8216 | train_metric: 0.7051
+step: 239000/250000 | train_loss: 0.8147 | train_metric: 0.7080
+step: 240000/250000 | train_loss: 0.8136 | train_metric: 0.7091
+step: 241000/250000 | train_loss: 0.8114 | train_metric: 0.7103
+step: 242000/250000 | train_loss: 0.8110 | train_metric: 0.7100
+step: 243000/250000 | train_loss: 0.8115 | train_metric: 0.7097
+step: 244000/250000 | train_loss: 0.8118 | train_metric: 0.7095
+step: 245000/250000 | train_loss: 0.8118 | train_metric: 0.7096
+step: 246000/250000 | train_loss: 0.8125 | train_metric: 0.7095
+step: 247000/250000 | train_loss: 0.8128 | train_metric: 0.7095
+step: 248000/250000 | train_loss: 0.8133 | train_metric: 0.7093
+step: 249000/250000 | train_loss: 0.8136 | train_metric: 0.7092
+step: 250000/250000 | train_loss: 0.8138 | train_metric: 0.7092
+epoch: 20/20 | val_loss: 0.8620 | val_metric: 0.6962
+Best model saved to: logs/PAunG/LorentzParT/best/pid1239752_20260919-185255.pt
+Training history plot saved to: plots/PAunG/LorentzParT/pid1239752_20260919-185255_train_history.png
