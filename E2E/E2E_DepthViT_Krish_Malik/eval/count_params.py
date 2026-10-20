@@ -16,9 +16,9 @@ import argparse, json
 import torch
 from DepthViT import DepthViT
 
-# ---- config-key -> DepthViT constructor-arg mapping --------------------------
-# This MUST match how imagenet_trainer.py builds the model. The one to watch:
-# config uses "n_layers" but the constructor arg is "num_layers".
+                                                                                
+                                                                             
+                                                                 
 def build_model(cfg, k_override=None, layers_override=None):
     m = cfg["model"]
     d = cfg["data"]
@@ -28,7 +28,7 @@ def build_model(cfg, k_override=None, layers_override=None):
         patch_size       = m["patch_size"],
         in_channels      = d["n_channels"],
         k_factor         = k_factor,
-        num_layers       = num_layers,           # <-- config key is "n_layers"
+        num_layers       = num_layers,                                         
         mlp_dim          = m["mlp_dim"],
         linear_rank      = m["linear_rank"],
         max_image_height = m["max_image_height"],
@@ -39,9 +39,9 @@ def build_model(cfg, k_override=None, layers_override=None):
         hap_window_size  = m.get("hap_window_size", 8),
         hap_mlp_ratio    = m.get("hap_mlp_ratio", 4.0),
         hap_drop_path    = m.get("hap_drop_path", 0.0),
-        grad_checkpointing = False,               # irrelevant to param count
+        grad_checkpointing = False,                                          
         k_chunk_size     = m.get("k_chunk_size", 0),
-        compile_blocks   = False,                 # skip torch.compile during counting
+        compile_blocks   = False,                                                     
         hap_alpha        = m.get("hap_alpha", 1.0),
         hap_learnable_alpha = m.get("hap_learnable_alpha", False),
     )
@@ -55,7 +55,7 @@ def breakdown(model):
     groups = {}
     for name, p in model.named_parameters():
         top = name.split(".")[0]
-        # split encoder into sub-parts for readability
+                                                      
         if top == "encoder":
             parts = name.split(".")
             top = "encoder." + (parts[1] if len(parts) > 1 else "")

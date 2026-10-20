@@ -1,0 +1,23 @@
+# tied_k1_wave2 run to the FULL 1M-step schedule instead of 200k, so the flat-then-decay LR
+# actually completes and the run is a finished recipe rather than a 20% snapshot. Same model as
+# tied_k1_wave2 (one unique block applied 8x, residual_scale_lambda 1.0, 746,306 params); only
+# run_name and max_steps differ. Inherits everything else from tied_k1_wave2.yaml.
+#
+# CONTROL CAVEAT (decided 2026-09-10): this run is launched WITHOUT a matched baseline_wave2. The
+# existing baseline / baseline_s42 / baseline_s43 runs have residual_scale_lambda unset (no
+# LayerScale), so any accuracy delta against them mixes "tying" with "the eps residual scale"
+# (measured residual growth 3.72x -> 1.61x on baseline alone). Read those deltas as qualified.
+# The readouts that need NO control are the reason to run this long: the within-checkpoint
+# inference-depth sweep (evaluate the same weights at 2..16 applications) and the fixed-point
+# diagnostics, both on the same 4.9M validation jets, seed-free.
+#
+# Matched-step comparison points that exist: baseline (26 evals, to 650k), diff_v1/diff_v2 (to
+# 950k), baseline_s42/s43 (to 200k). Eval every 25k on the full 5M as usual.
+#
+# Runtime: 200k steps took 3h40 on 4x A100 for the same architecture, so 1M is ~18.5h; submit
+# with -t 24:00:00 (gpu_regular max). --requeue + resume cover a pre-emption, with the documented
+# caveat that resume restores optimiser/scheduler/data cursor but not RNG state.
+_base: tied_k1_wave2.yaml
+
+run_name: tied_k1_1M
+max_steps: 1000000

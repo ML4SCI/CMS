@@ -1,0 +1,21 @@
+# U-as-rotation, multi-frequency + wider token path.
+#
+# In-flight `urot` (57410779) is d=128, 8 heads, d_head=16, ONE shared θ.
+# That is 1 DOF: a 2-plane rotation in n=16 leaves a 14-D invariant subspace,
+# and the other 7 planes are locked to the same angle.
+#
+# This follow-up:
+#   embed_dims [256, 1024, 256], 8 heads → d_head 32 → 16 independent 2-planes
+#   urot_per_plane: true → θ_{h,p} = π tanh(α_{h,p} U) with α_p(0) ∝ 2^{-p}
+#
+# Two knobs vs 57410779 (frequencies AND width). Wave 0 baseline_wide is
+# the additive-U capacity control at 160. Do not resume runs/urot.
+# Not K2. Leave Wave 0 / n8_k6* dirs alone.
+_base: urot.yaml
+
+run_name: urot_mf
+experiment: urot_mf
+
+embed_dims: [256, 1024, 256]
+num_heads: 8
+urot_per_plane: true

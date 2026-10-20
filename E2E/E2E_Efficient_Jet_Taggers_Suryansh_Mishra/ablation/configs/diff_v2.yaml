@@ -1,0 +1,10 @@
+# Arm 6/6 — Differential Attention V2.
+#
+# Differs from V1 in four ways: independent Q1/Q2 projections instead of one
+# doubled projection, no per-head RMSNorm, a token-specific lambda projected from
+# the input rather than a shared scalar, and no (1 - lambda_init) output rescale.
+# Shares K and V, so it is cheaper than V1 (~1.04x baseline params).
+_base: base.yaml
+
+arm: diff_v2
+run_name: diff_v2

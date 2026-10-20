@@ -1,0 +1,114 @@
+Requirement already satisfied: lgatr==1.4.4 in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (1.4.4)
+Requirement already satisfied: uproot in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (5.7.6)
+Requirement already satisfied: awkward in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (2.14.0)
+Requirement already satisfied: tqdm in /global/common/software/nersc/pe/conda-envs/26.8.1/python-3.13/nersc-python/lib/python3.13/site-packages (4.70.0)
+Requirement already satisfied: vector in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (1.8.1)
+Requirement already satisfied: torch>=2.1 in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from lgatr==1.4.4) (2.14.0)
+Requirement already satisfied: numpy in /global/common/software/nersc/pe/conda-envs/26.8.1/python-3.13/nersc-python/lib/python3.13/site-packages (from lgatr==1.4.4) (2.5.2)
+Requirement already satisfied: einops in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from lgatr==1.4.4) (0.8.2)
+Requirement already satisfied: opt_einsum in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from lgatr==1.4.4) (3.4.0)
+Requirement already satisfied: cramjam>=2.5.0 in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from uproot) (2.12.1)
+Requirement already satisfied: fsspec!=2026.2.0 in /global/common/software/nersc/pe/conda-envs/26.8.1/python-3.13/nersc-python/lib/python3.13/site-packages (from uproot) (2026.6.0)
+Requirement already satisfied: packaging in /global/common/software/nersc/pe/conda-envs/26.8.1/python-3.13/nersc-python/lib/python3.13/site-packages (from uproot) (26.3)
+Requirement already satisfied: xxhash in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from uproot) (4.0.1)
+Requirement already satisfied: awkward-cpp==57 in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from awkward) (57)
+Requirement already satisfied: filelock in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from torch>=2.1->lgatr==1.4.4) (4.0.0)
+Requirement already satisfied: typing-extensions>=4.10.0 in /global/common/software/nersc/pe/conda-envs/26.8.1/python-3.13/nersc-python/lib/python3.13/site-packages (from torch>=2.1->lgatr==1.4.4) (4.16.0)
+Requirement already satisfied: setuptools>=77.0.3 in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from torch>=2.1->lgatr==1.4.4) (84.0.0)
+Requirement already satisfied: sympy>=1.13.3 in /global/common/software/nersc/pe/conda-envs/26.8.1/python-3.13/nersc-python/lib/python3.13/site-packages (from torch>=2.1->lgatr==1.4.4) (1.14.0)
+Requirement already satisfied: networkx>=2.5.1 in /global/common/software/nersc/pe/conda-envs/26.8.1/python-3.13/nersc-python/lib/python3.13/site-packages (from torch>=2.1->lgatr==1.4.4) (3.6.1)
+Requirement already satisfied: jinja2 in /global/common/software/nersc/pe/conda-envs/26.8.1/python-3.13/nersc-python/lib/python3.13/site-packages (from torch>=2.1->lgatr==1.4.4) (3.1.6)
+Requirement already satisfied: cuda-toolkit==13.0.3 in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.1->lgatr==1.4.4) (13.0.3.0)
+Requirement already satisfied: cuda-bindings<14,>=13.0.3 in /global/common/software/nersc/pe/conda-envs/26.8.1/python-3.13/nersc-python/lib/python3.13/site-packages (from torch>=2.1->lgatr==1.4.4) (13.3.1)
+Requirement already satisfied: nvidia-cudnn-cu13==9.24.0.43 in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from torch>=2.1->lgatr==1.4.4) (9.24.0.43)
+Requirement already satisfied: nvidia-cusparselt-cu13==0.8.1 in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from torch>=2.1->lgatr==1.4.4) (0.8.1)
+Requirement already satisfied: nvidia-nccl-cu13==2.30.7 in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from torch>=2.1->lgatr==1.4.4) (2.30.7)
+Requirement already satisfied: nvidia-nvshmem-cu13==3.4.5 in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from torch>=2.1->lgatr==1.4.4) (3.4.5)
+Requirement already satisfied: triton~=3.8.0 in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from torch>=2.1->lgatr==1.4.4) (3.8.0)
+Requirement already satisfied: nvidia-cublas==13.1.1.3.* in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.1->lgatr==1.4.4) (13.1.1.3)
+Requirement already satisfied: nvidia-cuda-nvrtc==13.0.88.* in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.1->lgatr==1.4.4) (13.0.88)
+Requirement already satisfied: nvidia-cuda-runtime==13.0.96.* in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.1->lgatr==1.4.4) (13.0.96)
+Requirement already satisfied: nvidia-cufft==12.0.0.61.* in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.1->lgatr==1.4.4) (12.0.0.61)
+Requirement already satisfied: nvidia-nvjitlink<14,>=13.0.88 in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.1->lgatr==1.4.4) (13.4.92)
+Requirement already satisfied: nvidia-cufile==1.15.1.6.* in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.1->lgatr==1.4.4) (1.15.1.6)
+Requirement already satisfied: nvidia-cuda-cupti==13.0.85.* in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.1->lgatr==1.4.4) (13.0.85)
+Requirement already satisfied: nvidia-curand==10.4.0.35.* in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.1->lgatr==1.4.4) (10.4.0.35)
+Requirement already satisfied: nvidia-cusolver==12.0.4.66.* in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.1->lgatr==1.4.4) (12.0.4.66)
+Requirement already satisfied: nvidia-cusparse==12.6.3.3.* in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.1->lgatr==1.4.4) (12.6.3.3)
+Requirement already satisfied: nvidia-nvtx==13.0.85.* in /global/homes/t/tapur/.local/perlmutter/python-3.13/26.8.1/lib/python3.13/site-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==13.0.3; platform_system == "Linux"->torch>=2.1->lgatr==1.4.4) (13.0.85)
+Requirement already satisfied: cuda-pathfinder>=1.4.2 in /global/common/software/nersc/pe/conda-envs/26.8.1/python-3.13/nersc-python/lib/python3.13/site-packages (from cuda-bindings<14,>=13.0.3->torch>=2.1->lgatr==1.4.4) (1.8.0)
+Requirement already satisfied: mpmath<1.5,>=1.1.0 in /global/common/software/nersc/pe/conda-envs/26.8.1/python-3.13/nersc-python/lib/python3.13/site-packages (from sympy>=1.13.3->torch>=2.1->lgatr==1.4.4) (1.4.1)
+Requirement already satisfied: MarkupSafe>=2.0 in /global/common/software/nersc/pe/conda-envs/26.8.1/python-3.13/nersc-python/lib/python3.13/site-packages (from jinja2->torch>=2.1->lgatr==1.4.4) (3.0.3)
+torch 2.14.0+cu130 | cuda True | lgatr 1.4.4
+Node list: nid001897
+Sat Sep 19 22:09:14 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 580.178.04             Driver Version: 580.178.04     CUDA Version: 13.2     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA A100-SXM4-40GB          On  |   00000000:41:00.0 Off |                    0 |
+| N/A   29C    P0             65W /  400W |       0MiB /  40960MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+Model to evaluate: logs/LorentzParT/best/pid1229195_20260919-181031.pt
+pt_mean: 92.70594787597656, pt_std: 105.79940032958984
+eta_mean: -0.0011634617112576962, eta_std: 0.9182537198066711
+phi_mean: -0.0006678675417788327, phi_std: 1.8138455152511597
+E_mean: 133.98565673828125, E_std: 167.72598266601562
+shared pT/E scale: 133.98565673828125
+========================================================================
+[__init__] MASS-GATE NORMALISATION REGISTERED
+========================================================================
+  normalize flags        : [True, False, False, True]
+  shared pT/E scale s    : 133.985657   (one constant for BOTH, keeps p a 4-vector)
+  feature             mean           std       scale     shift
+  pT             92.705948    105.799400    133.9857    0.0000
+  eta            -0.001163      0.918254      1.0000    0.0000
+  phi            -0.000668      1.813846      1.0000    0.0000
+  energy        133.985657    167.725983    133.9857    0.0000
+
+  round-trip check on a 100.00 GeV, eta=0.4 constituent:
+                                  pT [GeV]     E [GeV]
+    truth                           100.00      108.11
+    x*scale + shift                 100.00      108.11
+    normalised m^2 (must be >= 0)          : -2.220446e-16
+  OK: denormalize inverts the dataset transform and the signature holds.
+========================================================================
+[processor] _get_interaction input : NORMALIZED by the shared pT/E scale
+[processor] U[...,3] = ln(m_ij^2)  : 0.0% of valid pairs clamped to ln(1e-8)=-18.42
+[processor] U[...,3] spread        : std 2.0250 over 119160 valid pairs
+[processor] -> pairwise mass channel is live (m_ij^2 > 0, sign preserved).
+[processor] the GLOBAL mass gate uses x_raw (GeV) instead.
+------------------------------------------------------------------------
+[forward 1/2] INVARIANT-MASS GATE  (units: GeV)
+  x_raw supplied to processor : True
+  constituent pT   med/max    :     5.65 /   544.50
+  constituent E    med/max    :     8.53 /   733.40
+  jet mass  q25/med/q75       :    94.01 /   115.51 /   130.37
+  jet mass  min/max           :    44.75 /   214.95
+  fraction clamped at m^2<=0  :   0.0000
+  VERDICT: masses are physical. m_W=80.4  m_Z=91.2  m_H=125.3  m_t=172.5 GeV
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+[forward 2/2] INVARIANT-MASS GATE  (units: GeV)
+  x_raw supplied to processor : True
+  constituent pT   med/max    :     6.02 /   501.80
+  constituent E    med/max    :     8.70 /   753.87
+  jet mass  q25/med/q75       :    90.57 /   116.46 /   133.63
+  jet mass  min/max           :    30.67 /   199.49
+  fraction clamped at m^2<=0  :   0.0000
+  VERDICT: masses are physical. m_W=80.4  m_Z=91.2  m_H=125.3  m_t=172.5 GeV
+------------------------------------------------------------------------
+test_loss: 0.8582 | test_metric: 0.6957
+Plots saved in: plots/LorentzParT

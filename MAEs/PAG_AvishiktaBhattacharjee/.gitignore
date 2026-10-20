@@ -1,0 +1,14 @@
+# .gitignore
+*.pyc
+*.code-workspace
+__pycache__/
+.pytest_cache/
+.vscode/
+checkpoints/
+# Trained weights stay on NERSC; add one with `git add -f <file>` if you want it in git
+*.pt
+data/*
+!data/.gitkeep
+docker/*
+venv/*
+.ipynb_checkpoints/

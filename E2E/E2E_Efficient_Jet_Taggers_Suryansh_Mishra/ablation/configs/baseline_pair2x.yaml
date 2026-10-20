@@ -1,0 +1,18 @@
+# Wave 0 dense-capacity screen: 2× PairEmbed MLP width, stock FFN and width.
+#
+# pair_embed_dims [128, 128, 128] (baseline [64, 64, 64]). Weaver appends
+# num_heads on construction, so U still has 8 output channels; only the MLP
+# hidden width doubles. Dense cousin of MoE-on-U.
+#
+# Training PairEmbed fusion is gather → Conv1d → scatter (width-agnostic).
+# Keep kernels on. max_steps 200k; 1M LR schedule for matched steps.
+#
+# Do not add this to submit_all.sh. New run_name so it cannot resume baseline.
+_base: baseline.yaml
+
+arm: baseline
+run_name: baseline_pair2x
+experiment: scale_capacity_wave0
+
+pair_embed_dims: [128, 128, 128]
+max_steps: 200000

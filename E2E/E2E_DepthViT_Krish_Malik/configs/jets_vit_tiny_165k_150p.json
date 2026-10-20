@@ -1,0 +1,78 @@
+{
+  "_comment": "ViT-Tiny ~165K-param matched-budget baseline on HLS4ML LHC jets 150p \u2014 cold start, 90 epochs. Width-shrunk from full ViT-Tiny (embed_dim 192->32, num_layers/mlp_ratio unchanged, num_heads 3->2). 162,373 params (verified via count_params.py against real ViTTiny). Matched to DepthViT k=4 baseline (164,417). Identical training protocol to the full ViT-Tiny 150p run for fair comparison.",
+  "seed": 42,
+  "data": {
+    "format": "lhc_jets",
+    "train_dir": "/pscratch/sd/k/krish_m/datasets/lhc_jets/150p/train",
+    "val_dir": "/pscratch/sd/k/krish_m/datasets/lhc_jets/150p/val",
+    "n_channels": 2,
+    "num_classes": 5,
+    "global_batch_size": 512,
+    "num_workers": 4,
+    "pin_memory": true,
+    "persistent_workers": true,
+    "pad_to_multiple": 0,
+    "hflip_prob": 0.5,
+    "_comment_stats": "TODO: replace with 150p-specific stats via scripts/compute_jet_stats.py. Currently using 100p stats as placeholder \u2014 kept IDENTICAL to the full ViT-Tiny 150p run so the matched-budget comparison is apples-to-apples.",
+    "channel_stats": {
+      "ecal_mean": 1.923e-05,
+      "ecal_std": 0.00844423,
+      "hcal_mean": 0.00672488,
+      "hcal_std": 0.14590938
+    },
+    "label_smoothing": 0.0,
+    "dataset_size": 620000
+  },
+  "model": {
+    "_comment": "Width-shrunk ViT-Tiny: 12 layers, 32 hidden, 2 heads (head_dim 16), MLP ratio 4. patch=10 matches DepthViT tokenization (10x10 grid). 162,373 params. Depth and mlp_ratio held identical to full ViT-Tiny; only embed_dim narrowed (192->32) and heads 3->2 to keep head_dim>=16. Matched to DepthViT 164,417-param baseline.",
+    "img_size": 100,
+    "patch_size": 10,
+    "embed_dim": 32,
+    "num_layers": 12,
+    "num_heads": 2,
+    "mlp_ratio": 4.0,
+    "dropout": 0.0,
+    "attn_dropout": 0.0,
+    "compile": false
+  },
+  "trainer": {
+    "precision": "bf16-mixed",
+    "accumulate_grad_batches": 4,
+    "grad_clip_norm": 1.0,
+    "devices": 4,
+    "strategy": "ddp",
+    "log_every_n_steps": 20,
+    "val_check_interval": 1.0,
+    "default_root_dir": "/pscratch/sd/k/krish_m/depthvit/runs/vit_tiny_165k_jets_150p_90ep"
+  },
+  "checkpointing": {
+    "dir": "/pscratch/sd/k/krish_m/depthvit/runs/vit_tiny_165k_jets_150p_90ep/checkpoints/{phase}",
+    "monitor": "val_acc1",
+    "mode": "max",
+    "save_top_k": 1,
+    "every_n_epochs": 1
+  },
+  "phases": [
+    {
+      "name": "cls_finetune",
+      "type": "cls_finetune",
+      "epochs": 90,
+      "optim": {
+        "optimizer": "sgd",
+        "lr": 0.1,
+        "weight_decay": 0.0001,
+        "momentum": 0.9
+      },
+      "sched": {
+        "sched": "cosine",
+        "warmup_steps": 5000,
+        "min_lr": 1e-06,
+        "epochs": 90
+      }
+    }
+  ],
+  "resume": {
+    "start_phase": 0,
+    "path": "auto"
+  }
+}

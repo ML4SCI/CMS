@@ -1,0 +1,6 @@
+# Arm 1/6 — stock weaver ParticleTransformer. The reference every other arm is
+# compared against, so it changes nothing from base.yaml.
+_base: base.yaml
+
+arm: baseline
+run_name: baseline
