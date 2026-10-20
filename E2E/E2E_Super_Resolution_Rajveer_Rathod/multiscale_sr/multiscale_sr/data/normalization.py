@@ -75,13 +75,15 @@ def batch_to_tensor(batch_col) -> Tensor:
     try:
         col = batch_col
         flat = col.flatten().flatten().flatten()  # list<list<list<double>>> -> flat double
-        buf = flat.buffers()[1]
         n = len(col)
-        total = len(flat)
-        raw = np.frombuffer(buf, dtype=np.float64, count=total).reshape(n, -1)
+        # Arrow arrays may have offsets and float32/float64 storage. Respect
+        # their actual slice/dtype rather than interpreting the raw buffer.
+        raw = flat.to_numpy(zero_copy_only=False).reshape(n, -1)
         first = np.asarray(col[0].as_py(), dtype=np.float32)
         arr = raw.reshape((n, *first.shape)).astype(np.float32)
-        return torch.from_numpy(arr)
+        if arr.shape[1] != 3 and arr.shape[-1] == 3:
+            arr = arr.transpose(0, 3, 1, 2)
+        return torch.from_numpy(arr.copy())
     except Exception:
         pass
     # Fallback for unexpected column types.
@@ -98,8 +100,8 @@ def discover_parquet_files(data_dir: Path) -> list[Path]:
 
 
 def split_files(files: Sequence[Path], val_ratio: float) -> tuple[list[Path], list[Path]]:
-    if len(files) == 1:
-        return list(files), list(files)
+    if len(files) < 2:
+        raise ValueError("At least two parquet files are required for disjoint training/held-out splits")
     n_val = max(1, int(round(len(files) * val_ratio)))
     n_val = min(n_val, len(files) - 1)
     return list(files[:-n_val]), list(files[-n_val:])

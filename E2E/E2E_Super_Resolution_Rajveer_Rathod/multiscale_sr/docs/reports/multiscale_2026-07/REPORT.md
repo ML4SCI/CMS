@@ -61,7 +61,7 @@ At `d_loss_floor = 0.10` the discriminator is skipped on **98.5% of steps on ave
 
 | `floor = 0.10` (30 ep) | `floor = 0.05` (60 ep) |
 |---|---|
-| ![floor 0.10](figures/training/metrics_32x_floor010_30ep.png) | ![floor 0.05](figures/training/metrics_32x_floor005_60ep.png) |
+| ![floor 0.10](../../../reports/multiscale_2026-07/figures/training/metrics_32x_floor010_30ep.png) | ![floor 0.05](../../../reports/multiscale_2026-07/figures/training/metrics_32x_floor005_60ep.png) |
 
 Both curves look healthy — smooth monotonic val_L1 descent, no divergence. **That is the trap:** the failure is invisible in the loss curves and only shows up in `d_skip_frac` and `peak_ratio`.
 
@@ -83,19 +83,19 @@ Each grid: **LR (bicubic up) · Super-Resolved · Ground Truth (HR) · SR − HR
 
 ### 16× — the honest limit case
 
-![16x samples](figures/16x/samples.png)
+![16x samples](../../../reports/multiscale_2026-07/figures/16x/samples.png)
 
 SR sharpens the core correctly and places it accurately, but HR's sparse single-pixel deposits scattered across the frame are **largely absent**. The residual shows a concentrated red core error — the model produces a physically sensible *concentrated* response where HR has structure spread over many pixels. At 8× upscale that information is largely destroyed by the downsampling and is not recoverable by this architecture.
 
 ### 32× — core plus most surrounding structure
 
-![32x samples](figures/32x/samples.png)
+![32x samples](../../../reports/multiscale_2026-07/figures/32x/samples.png)
 
 Multi-blob clusters and many scattered deposits return. The residual is flatter than 16× and mostly non-structural, with remaining error concentrated at the peak.
 
 ### 64× — near-faithful
 
-![64x samples](figures/64x/samples.png)
+![64x samples](../../../reports/multiscale_2026-07/figures/64x/samples.png)
 
 SR reproduces the extended filaments and most of the scattered "dust" across the whole frame. The residual is the flattest of the three, with error confined to small-amplitude individual pixels — about the residual floor for this task. At 2× upscale the generator's job is sharpening and peak restoration rather than inventing missing structure, so the same fixed model reaches a much higher ceiling.
 
@@ -115,7 +115,7 @@ Per-image total energy, SR vs HR and LR vs HR:
 
 | 16× | 32× | 64× |
 |---|---|---|
-| ![16x energy](figures/16x/energy_correlation.png) | ![32x energy](figures/32x/energy_correlation.png) | ![64x energy](figures/64x/energy_correlation.png) |
+| ![16x energy](../../../reports/multiscale_2026-07/figures/16x/energy_correlation.png) | ![32x energy](../../../reports/multiscale_2026-07/figures/32x/energy_correlation.png) | ![64x energy](../../../reports/multiscale_2026-07/figures/64x/energy_correlation.png) |
 
 Note the visible tightening of the SR scatter (left panel) versus LR (right panel) in each pair — bicubic systematically over-estimates total energy (ratio ≈ 1.03–1.06), while SR sits much closer to unity.
 
@@ -133,7 +133,7 @@ Jet `pt` versus total image energy — a physically meaningful correlation that 
 
 | 16× | 32× | 64× |
 |---|---|---|
-| ![16x pt](figures/16x/pt_correlation.png) | ![32x pt](figures/32x/pt_correlation.png) | ![64x pt](figures/64x/pt_correlation.png) |
+| ![16x pt](../../../reports/multiscale_2026-07/figures/16x/pt_correlation.png) | ![32x pt](../../../reports/multiscale_2026-07/figures/32x/pt_correlation.png) | ![64x pt](../../../reports/multiscale_2026-07/figures/64x/pt_correlation.png) |
 
 ## 5. Taggability — the physics-facing metric
 
@@ -145,13 +145,13 @@ Left panel of each figure = the fixed HR tagger (the headline). Right panel = in
 
 | 16× — SR **below** the LR floor | 32× — SR just above LR | 64× — SR approaches HR |
 |---|---|---|
-| ![16x roc](figures/16x/roc_overlay.png) | ![32x roc](figures/32x/roc_overlay.png) | ![64x roc](figures/64x/roc_overlay.png) |
+| ![16x roc](../../../reports/multiscale_2026-07/figures/16x/roc_overlay.png) | ![32x roc](../../../reports/multiscale_2026-07/figures/32x/roc_overlay.png) | ![64x roc](../../../reports/multiscale_2026-07/figures/64x/roc_overlay.png) |
 
 ### AUC summary
 
 | 16× | 32× | 64× |
 |---|---|---|
-| ![16x auc](figures/16x/auc_summary_bar.png) | ![32x auc](figures/32x/auc_summary_bar.png) | ![64x auc](figures/64x/auc_summary_bar.png) |
+| ![16x auc](../../../reports/multiscale_2026-07/figures/16x/auc_summary_bar.png) | ![32x auc](../../../reports/multiscale_2026-07/figures/32x/auc_summary_bar.png) | ![64x auc](../../../reports/multiscale_2026-07/figures/64x/auc_summary_bar.png) |
 
 At 64× the SR bar reaches 0.628 against an HR ceiling of 0.669. At 16× the SR bar (0.487) sits *below* the LR bar (0.597) — worse than doing nothing.
 
@@ -161,7 +161,7 @@ Wide separation between the two class histograms means taggable. SR should resem
 
 | 16× | 32× | 64× |
 |---|---|---|
-| ![16x dist](figures/16x/score_distributions.png) | ![32x dist](figures/32x/score_distributions.png) | ![64x dist](figures/64x/score_distributions.png) |
+| ![16x dist](../../../reports/multiscale_2026-07/figures/16x/score_distributions.png) | ![32x dist](../../../reports/multiscale_2026-07/figures/32x/score_distributions.png) | ![64x dist](../../../reports/multiscale_2026-07/figures/64x/score_distributions.png) |
 
 ### Per-sample score agreement — the strictest test
 
@@ -175,7 +175,7 @@ For each image, the HR tagger's score on SR plotted against its score on HR. Poi
 
 | 16× — near-random scatter | 32× — weak correlation | 64× — points hug the diagonal |
 |---|---|---|
-| ![16x agree](figures/16x/score_agreement.png) | ![32x agree](figures/32x/score_agreement.png) | ![64x agree](figures/64x/score_agreement.png) |
+| ![16x agree](../../../reports/multiscale_2026-07/figures/16x/score_agreement.png) | ![32x agree](../../../reports/multiscale_2026-07/figures/32x/score_agreement.png) | ![64x agree](../../../reports/multiscale_2026-07/figures/64x/score_agreement.png) |
 
 This is the clearest single ranking in the study, and it tracks input resolution monotonically.
 
@@ -185,7 +185,7 @@ Accuracy / precision / recall / F1 at the Youden-J optimal threshold, per source
 
 | 16× | 32× | 64× |
 |---|---|---|
-| ![16x conf](figures/16x/confusion_matrices.png) | ![32x conf](figures/32x/confusion_matrices.png) | ![64x conf](figures/64x/confusion_matrices.png) |
+| ![16x conf](../../../reports/multiscale_2026-07/figures/16x/confusion_matrices.png) | ![32x conf](../../../reports/multiscale_2026-07/figures/32x/confusion_matrices.png) | ![64x conf](../../../reports/multiscale_2026-07/figures/64x/confusion_matrices.png) |
 
 ## 6. Working points and calibration
 
@@ -203,7 +203,7 @@ At 64×, SR lifts rejection from the bicubic floor of 1.85 to 2.93 against an HR
 
 | 16× | 32× | 64× |
 |---|---|---|
-| ![16x wp](figures/16x/efficiency_vs_threshold.png) | ![32x wp](figures/32x/efficiency_vs_threshold.png) | ![64x wp](figures/64x/efficiency_vs_threshold.png) |
+| ![16x wp](../../../reports/multiscale_2026-07/figures/16x/efficiency_vs_threshold.png) | ![32x wp](../../../reports/multiscale_2026-07/figures/32x/efficiency_vs_threshold.png) | ![64x wp](../../../reports/multiscale_2026-07/figures/64x/efficiency_vs_threshold.png) |
 
 ### Calibration — does SR shift the tagger's confidence?
 
@@ -219,7 +219,7 @@ Only at 64× does SR improve calibration over the bicubic baseline (0.275 vs 0.4
 
 | 16× | 32× | 64× |
 |---|---|---|
-| ![16x cal](figures/16x/calibration.png) | ![32x cal](figures/32x/calibration.png) | ![64x cal](figures/64x/calibration.png) |
+| ![16x cal](../../../reports/multiscale_2026-07/figures/16x/calibration.png) | ![32x cal](../../../reports/multiscale_2026-07/figures/32x/calibration.png) | ![64x cal](../../../reports/multiscale_2026-07/figures/64x/calibration.png) |
 
 ## 7. The central contradiction
 

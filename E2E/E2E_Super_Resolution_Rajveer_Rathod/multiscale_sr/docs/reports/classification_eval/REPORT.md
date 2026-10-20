@@ -36,7 +36,7 @@ tagger trained on HR). 100% means SR is as taggable as real HR.
 
 ## 2. Headline result — efficiency scales with input resolution
 
-![Cross-scale summary](cross_scale_summary.png)
+![Cross-scale summary](../../../reports/classification_eval/cross_scale_summary.png)
 
 We trained three independent SR models (16×, 32×, 64× downscale factors) and
 evaluated each with the classification pipeline. The single most important
@@ -79,11 +79,11 @@ on HR (green) and above LR (red) is the win condition.**
 
 **64× (success) — SR overlaps HR:**
 
-![ROC 64x](figures/64x_roc_overlay.png)
+![ROC 64x](../../../reports/classification_eval/figures/64x_roc_overlay.png)
 
 **32× (failure) — SR collapses onto LR:**
 
-![ROC 32x](figures/32x_roc_overlay.png)
+![ROC 32x](../../../reports/classification_eval/figures/32x_roc_overlay.png)
 
 *Left panel = one fixed HR-trained tagger applied to all three sources (the
 headline). Right panel = an independent tagger trained per source (see §3.7).*
@@ -94,11 +94,11 @@ Three AUC bars with the efficiency and recovery headline printed in the title.
 
 **64×:**
 
-![AUC bar 64x](figures/64x_auc_summary_bar.png)
+![AUC bar 64x](../../../reports/classification_eval/figures/64x_auc_summary_bar.png)
 
 **32×:**
 
-![AUC bar 32x](figures/32x_auc_summary_bar.png)
+![AUC bar 32x](../../../reports/classification_eval/figures/32x_auc_summary_bar.png)
 
 ### 3.3 Score distributions — separability by source
 
@@ -108,11 +108,11 @@ whether SR looks like HR or like LR.
 
 **64× — SR classes separate like HR:**
 
-![Score dist 64x](figures/64x_score_distributions.png)
+![Score dist 64x](../../../reports/classification_eval/figures/64x_score_distributions.png)
 
 **32× — SR class histograms overlap (barely separable):**
 
-![Score dist 32x](figures/32x_score_distributions.png)
+![Score dist 32x](../../../reports/classification_eval/figures/32x_score_distributions.png)
 
 ### 3.4 Confusion matrices — accuracy & F1 at the operating point
 
@@ -126,11 +126,11 @@ threshold**, per source. Concrete classification performance, not just AUC.
 
 **64×:**
 
-![Confusion 64x](figures/64x_confusion_matrices.png)
+![Confusion 64x](../../../reports/classification_eval/figures/64x_confusion_matrices.png)
 
 **32×:**
 
-![Confusion 32x](figures/32x_confusion_matrices.png)
+![Confusion 32x](../../../reports/classification_eval/figures/32x_confusion_matrices.png)
 
 ### 3.5 Working-point analysis — background rejection (HEP-standard)
 
@@ -148,11 +148,11 @@ At 64× SR matches HR's rejection (4.5 ≈ 4.3); at 32× SR is at the LR floor.
 
 **64×:**
 
-![Working point 64x](figures/64x_efficiency_vs_threshold.png)
+![Working point 64x](../../../reports/classification_eval/figures/64x_efficiency_vs_threshold.png)
 
 **32×:**
 
-![Working point 32x](figures/32x_efficiency_vs_threshold.png)
+![Working point 32x](../../../reports/classification_eval/figures/32x_efficiency_vs_threshold.png)
 
 ### 3.6 Calibration — does SR shift the tagger's confidence?
 
@@ -168,11 +168,11 @@ At 64× SR is *as well-calibrated as HR*; at 32× it is as miscalibrated as LR.
 
 **64×:**
 
-![Calibration 64x](figures/64x_calibration.png)
+![Calibration 64x](../../../reports/classification_eval/figures/64x_calibration.png)
 
 **32×:**
 
-![Calibration 32x](figures/32x_calibration.png)
+![Calibration 32x](../../../reports/classification_eval/figures/32x_calibration.png)
 
 ### 3.7 Per-sample score agreement — the strictest test
 
@@ -192,11 +192,11 @@ with HR scores even when aggregate AUC looks similar.
 
 **64× — points hug the diagonal:**
 
-![Agreement 64x](figures/64x_score_agreement.png)
+![Agreement 64x](../../../reports/classification_eval/figures/64x_score_agreement.png)
 
 **32× — random scatter:**
 
-![Agreement 32x](figures/32x_score_agreement.png)
+![Agreement 32x](../../../reports/classification_eval/figures/32x_score_agreement.png)
 
 ---
 
