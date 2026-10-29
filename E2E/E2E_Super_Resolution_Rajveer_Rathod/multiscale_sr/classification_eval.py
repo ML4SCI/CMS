@@ -63,9 +63,10 @@ from multiscale_sr.classification_metrics import (
 from multiscale_sr.data import get_dataloader
 from multiscale_sr.data.normalization import ChannelStats, denormalize
 from multiscale_sr.engine import collect_tagging_tensors
+from multiscale_sr.spectral import extract_particles, pairwise_omega, semd_images, spectral_function
 from multiscale_sr.models import Generator
-from multiscale_sr.tagger import tagger_scores, train_tagger
-from multiscale_sr.utils import resolve_env, seed_everything
+from multiscale_sr.tagger import JetTagger, tagger_scores, train_tagger
+from multiscale_sr.utils import load_generator_state, resolve_env, seed_everything
 
 PACKAGE_ROOT = Path(__file__).resolve().parent
 _SOURCES = ("hr", "lr", "sr")
@@ -94,11 +95,63 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--tagger-epochs", type=int, default=15)
     p.add_argument("--tagger-width", type=int, default=32)
     p.add_argument("--seed", type=int, default=42)
+    p.add_argument("--eval-seed", type=int, default=None,
+                   help="Seed for the MEASUREMENT: global RNG, tagger train/test split, and "
+                        "tagger seed derivation. Overrides --seed when given (same value plugs "
+                        "into everything --seed used to drive here, including "
+                        "--tagger-seed-per-scale). Must be held FIXED across SR checkpoints "
+                        "being compared, so the ruler does not move between them. Never set "
+                        "this to the SR training seed.")
+    p.add_argument("--tagger-seed", type=int, default=None,
+                   help="Explicit tagger RNG seed; overrides --tagger-seed-per-scale if set")
+    p.add_argument("--tagger-seed-per-scale", action="store_true", default=True,
+                   help="Derive the tagger's RNG seed as --eval-seed/--seed + scale (default: "
+                        "on). Without this, HR/LR/SR at every scale share the same held-out HR "
+                        "test images (the val/test split is scale-independent, see "
+                        "data/normalization.py held_out_row_split) and the same seed, so "
+                        "'per-scale taggers' would otherwise train on identical data with "
+                        "identical init and end up near-duplicates rather than genuinely "
+                        "independent per scale")
+    p.add_argument("--no-tagger-seed-per-scale", dest="tagger_seed_per_scale", action="store_false")
+    p.add_argument("--tagger-checkpoint", type=str, default=None,
+                   help="Path to a frozen HR tagger. Loaded if it exists, otherwise the tagger "
+                        "is trained and saved here. Reusing one artifact across SR checkpoints "
+                        "is what makes HR/LR AUC constant across runs. When unset (default), "
+                        "the HR tagger is trained inline as before (--tagger-ckpt/-seed logic "
+                        "unchanged).")
     p.add_argument("--out-dir", type=str, default=None,
                    help="Default: <run>/figures/classification")
+    p.add_argument("--semd-topk", type=int, default=128,
+                   help="Brightest pixels kept per image for SEMD (paper benchmarks use N=125). "
+                        "Recorded in the results JSON; sweep it to check K-sensitivity")
+    p.add_argument("--semd-omega-R", type=float, default=1.0,
+                   help="Angular scale at which SR/HR total-energy imbalance is deposited")
+    p.add_argument("--semd-beta", type=float, default=1.0,
+                   help="SEMD ground-metric exponent: omega_ij = dist_ij ** beta")
+    p.add_argument("--semd-threshold", type=float, default=0.0,
+                   help="Raw-energy cut applied before top-K pixel selection")
+    p.add_argument("--semd-max-samples", type=int, default=1000,
+                   help="Cap on images used for SEMD (it is O(K^2 log K) per image)")
+    p.add_argument("--semd-chunk", type=int, default=1,
+                   help="Samples per SEMD call; cumulative-integral storage scales as chunk * (topk+1)**2")
     p.add_argument("--skip-per-source", action="store_true",
                    help="Only train the fixed-HR tagger (skip per-source taggers)")
     return p
+
+
+def _resolve_eval_seed(args: argparse.Namespace) -> int:
+    """Fold the optional --eval-seed override into a single effective seed.
+
+    --seed remains the original flag driving global RNG, the tagger's
+    train/test split, and (via --tagger-seed-per-scale) the tagger seed. When
+    --eval-seed is also given it takes over that same role — the two are not
+    independent axes, --eval-seed is simply the more explicit name for the
+    same quantity, matching upstream's terminology so callers who pass
+    --eval-seed (e.g. the training notebook) get a real, working seed.
+    """
+    if args.eval_seed is None:
+        return args.seed
+    return args.eval_seed
 
 
 def _split_indices(n: int, test_frac: float, seed: int) -> tuple[torch.Tensor, torch.Tensor]:
@@ -403,6 +456,9 @@ SR (generator output, the recovery).
 - **Background rejection 1/eps_B @ {_ROC50_EFF:.0%} signal eff** —
   HR={prim['bkg_rej_at_50']['hr']:.1f}, LR={prim['bkg_rej_at_50']['lr']:.1f},
   SR={prim['bkg_rej_at_50']['sr']:.1f}. The HEP-standard operating point.
+- **Tagger:** width={results['tagger_width']}, epochs={results['tagger_epochs']},
+  seed={results['tagger_seed']} — see Method notes below for what this seed means
+  and why it matters for cross-scale comparisons.
 
 ## Figures
 
@@ -427,8 +483,193 @@ SR (generator output, the recovery).
 - All sources share HR spatial size (LR is bicubic-upsampled) so one tagger
   architecture consumes any of them and comparisons are fair.
 - Parquet only — the HDF5/CaloChallenge data has no class label.
+- **Per-scale tagger independence:** the held-out val/test row split
+  (`data/normalization.py: held_out_row_split`) depends only on row index and
+  `--val-ratio`, not on `scale` — so with the same `--data-dir`/`--val-ratio`,
+  every scale's "test" HR images are the *same* images. If every scale also
+  used the same tagger seed, "per-scale taggers" would be near-duplicate
+  training runs (same data, same init) rather than genuinely independent ones.
+  By default (`--tagger-seed-per-scale`, on unless `--tagger-seed` is passed
+  explicitly) the tagger seed is `--seed + scale`, so this checkpoint's tagger
+  (seed={results['tagger_seed']}) differs from another scale's by design. Pass
+  `--no-tagger-seed-per-scale` to force all scales back onto the same seed
+  (e.g. to isolate scale effects from tagger-init variance), or `--tagger-seed`
+  to pin an exact value.
+- **Training physics loss:** this checkpoint was trained with
+  `physics_loss_type={results['physics_loss_type']}` (lambda_physics=
+  {results['lambda_physics']}). `ratio` = |sum(E_pred)/sum(E_true) - 1|, equal
+  weight per fractional energy-conservation error. `l2` = (response - 1)^2,
+  penalizes large misses (e.g. on rare high-energy events) more heavily. See
+  `multiscale_sr/engine.py` (`physics_loss_ratio` / `physics_loss_l2`) and
+  `train.py --physics-loss-type`. Compare `val_phys_loss_ratio` /
+  `val_phys_loss_l2` across runs (both are logged every epoch regardless of
+  which one trained the model) to see how each formulation trends.
 """
     path.write_text(md, encoding="utf-8")
+
+
+# --------------------------------------------------------------------------- #
+# SEMD (top-K pixel approximation) — the geometry-aware metric
+# --------------------------------------------------------------------------- #
+def _semd_vs_hr(images, hr_images, stats: ChannelStats, args, device) -> np.ndarray:
+    """Per-sample SEMD between one source and HR, on raw (denormalized) energies.
+
+    Every other physics quantity in this script is invariant under permutation
+    of the pixels (see ``spectral.py``); this one is not. That is the whole
+    reason it is here.
+    """
+    n = min(images.shape[0], args.semd_max_samples)
+    out = []
+    bs = 32
+    for start in range(0, n, bs):
+        sl = slice(start, min(start + bs, n))
+        pred_raw = denormalize(images[sl].float().to(device), stats)
+        tgt_raw = denormalize(hr_images[sl].float().to(device), stats)
+        out.append(
+            semd_images(
+                pred_raw, tgt_raw,
+                topk=args.semd_topk, threshold=args.semd_threshold,
+                beta=args.semd_beta, omega_R=args.semd_omega_R,
+                chunk=args.semd_chunk,
+            ).detach().cpu().numpy()
+        )
+    return np.concatenate(out) if out else np.array([])
+
+
+def _mean_spectral_curve(images, stats: ChannelStats, args, device,
+                         n_bins: int = 60, n_samples: int = 200):
+    """Batch-averaged spectral function s(omega) of Eq. 2.1, as a histogram.
+
+    This is the paper's own diagnostic visualization: the energy-weighted
+    distribution of pairwise angles. If SR reproduces HR's geometry, the curves
+    lie on top of each other; a shifted or narrowed curve is misplaced
+    substructure, which is exactly what the pixel-wise metrics cannot see.
+    """
+    n = min(images.shape[0], n_samples)
+    max_w = float(np.hypot(images.shape[-2], images.shape[-1]))
+    edges = np.linspace(0.0, max_w, n_bins + 1)
+    acc = np.zeros(n_bins)
+    seen = 0
+    for start in range(0, n, 32):
+        sl = slice(start, min(start + 32, n))
+        raw = denormalize(images[sl].float().to(device), stats)
+        e, c, _ = extract_particles(raw, topk=args.semd_topk, threshold=args.semd_threshold)
+        om = pairwise_omega(c, beta=args.semd_beta)
+        w, wt = spectral_function(e, om)
+        w_np = w.detach().cpu().numpy()
+        wt_np = wt.detach().cpu().numpy()
+        for i in range(w_np.shape[0]):
+            # Normalize per image by E_tot^2 so bright jets don't dominate.
+            norm = wt_np[i].sum()
+            h, _ = np.histogram(w_np[i], bins=edges, weights=wt_np[i] / max(norm, 1e-12))
+            acc += h
+            seen += 1
+    centers = 0.5 * (edges[:-1] + edges[1:])
+    return centers, acc / max(seen, 1)
+
+
+def _fig_spectral_overlay(curves: dict, semd: dict, path: Path) -> None:
+    """Overlay HR / LR / SR spectral functions, the paper's key diagnostic plot."""
+    plt = _plt()
+    fig, axes = plt.subplots(1, 2, figsize=(13, 5))
+
+    colors = {"hr": "k", "lr": "tab:orange", "sr": "tab:blue"}
+    for src in ("hr", "lr", "sr"):
+        x, y = curves[src]
+        axes[0].plot(x, y, label=src.upper(), color=colors[src],
+                     lw=2.0 if src == "hr" else 1.6,
+                     ls="-" if src != "lr" else "--")
+    axes[0].set_xlabel(r"$\omega$  (pixel distance)")
+    axes[0].set_ylabel(r"$s(\omega)$  (normalized by $E_{tot}^2$)")
+    axes[0].set_title("Spectral function — energy-weighted pairwise angles")
+    axes[0].legend()
+    axes[0].set_yscale("log")
+
+    # Residual against HR makes small geometric shifts legible.
+    x_hr, y_hr = curves["hr"]
+    for src in ("lr", "sr"):
+        _, y = curves[src]
+        axes[1].plot(x_hr, y - y_hr, label=f"{src.upper()} - HR", color=colors[src],
+                     ls="--" if src == "lr" else "-")
+    axes[1].axhline(0.0, color="k", lw=1.0)
+    axes[1].set_xlabel(r"$\omega$  (pixel distance)")
+    axes[1].set_ylabel(r"$s(\omega) - s_{HR}(\omega)$")
+    axes[1].set_title(
+        f"Residual vs HR\nSEMD(SR,HR)={semd['sr_mean']:.4g}   "
+        f"SEMD(LR,HR)={semd['lr_mean']:.4g}",
+        fontsize=11,
+    )
+    axes[1].legend()
+
+    # Clip x to where the spectral weight actually lives; the full diagonal of
+    # the image is mostly empty and squashes the informative small-omega region.
+    support = [x[y > 1e-6].max() for x, y in curves.values() if (y > 1e-6).any()]
+    if support:
+        hi = float(max(support)) * 1.05
+        for ax in axes:
+            ax.set_xlim(0.0, hi)
+
+    fig.suptitle("SEMD (top-K pixel approximation) — arXiv:2410.05379 Eq. (2.1)", fontsize=12)
+    fig.tight_layout()
+    fig.savefig(path, dpi=150)
+    plt.close(fig)
+
+
+def _load_or_train_hr_tagger(path_str: str | None, images, labels, device,
+                             width: int, epochs: int, seed: int, test_idx,
+                             test_frac: float | None = None, n: int | None = None):
+    """Return (tagger, provenance). Loads a frozen tagger if one is cached.
+
+    The cached artifact carries the tagger-test indices and the split/seed it was
+    built with; a mismatch means the frozen tagger's training rows overlap the
+    caller's evaluation rows, so we refuse rather than silently leak.
+
+    When ``path_str`` is None (default), behaves exactly like before this
+    feature existed: trains a fresh HR tagger inline, no caching.
+    """
+    if path_str is None:
+        tagger = train_tagger(images, labels, device, width=width, epochs=epochs, seed=seed)
+        return tagger, {"source": "trained-inline", "checkpoint": None}
+
+    path = Path(path_str)
+    from multiscale_sr.recovery import verified_copies, publish_checkpoint
+    copies = verified_copies(path.parent / path.stem, "tagger")
+    readable_path = copies[0][1] if copies else path
+    if readable_path.exists():
+        blob = torch.load(readable_path, map_location="cpu", weights_only=True)
+        cached_test = torch.as_tensor(blob["test_idx"])
+        if not torch.equal(cached_test.cpu(), test_idx.cpu()):
+            raise SystemExit(
+                f"[cls] frozen tagger {path} was built with a different tagger-train/test split "
+                f"(cached eval_seed={blob.get('eval_seed')}, test_frac={blob.get('test_frac')}, "
+                f"n={blob.get('n')}). Reusing it would evaluate on rows it trained on. "
+                "Rebuild it, or match --eval-seed/--test-frac/--max-samples to the cached values."
+            )
+        tagger = JetTagger(in_channels=blob["in_channels"], width=blob["width"]).to(device)
+        tagger.load_state_dict(blob["tagger"])
+        tagger.eval()
+        print(f"[cls] loaded FROZEN HR tagger from {path} (eval_seed={blob.get('eval_seed')})")
+        return tagger, {"source": "loaded-frozen", "checkpoint": str(path)}
+
+    tagger = train_tagger(images, labels, device, width=width, epochs=epochs, seed=seed)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "tagger": tagger.state_dict(),
+        "width": width,
+        "in_channels": images.shape[1],
+        "test_idx": test_idx.cpu(),
+        "eval_seed": seed,
+        "epochs": epochs,
+        "test_frac": test_frac,
+        "n": n,
+    }
+    import tempfile
+    with tempfile.TemporaryDirectory() as temporary:
+        local = Path(temporary) / "tagger.pt"
+        torch.save(payload, local)
+        publish_checkpoint(local, path.parent / path.stem, "tagger")
+    print(f"[cls] trained and SAVED frozen HR tagger -> {path}")
+    return tagger, {"source": "trained-and-saved", "checkpoint": str(path)}
 
 
 # --------------------------------------------------------------------------- #
@@ -436,11 +677,20 @@ SR (generator output, the recovery).
 # --------------------------------------------------------------------------- #
 def main() -> None:
     args = build_parser().parse_args()
-    seed_everything(args.seed)
+    eval_seed = _resolve_eval_seed(args)
+    seed_everything(eval_seed)
     env = resolve_env()
     print(f"[env] {env}")
+    import atexit
+    from multiscale_sr.recovery import Diagnostics
+    diagnostic_dir = Path(args.out_dir) if args.out_dir else Path(args.checkpoint).parent.parent / "figures/classification"
+    diagnostic_dir.mkdir(parents=True, exist_ok=True)
+    diagnostics = Diagnostics(diagnostic_dir, env.device).start()
+    atexit.register(diagnostics.close)
+    diagnostics.phase("evaluation_checkpoint_load")
 
-    ckpt = torch.load(args.checkpoint, map_location=env.device)
+    # Optimizer states in the training checkpoint must not occupy eval GPU RAM.
+    ckpt = torch.load(args.checkpoint, map_location="cpu", weights_only=True)
     ckpt_args = ckpt.get("args", {})
     scale = args.scale or ckpt_args.get("scale")
     hr_size = args.hr_size or ckpt_args.get("hr_size", 125)
@@ -451,8 +701,10 @@ def main() -> None:
     gen = Generator(
         base_channels=ckpt_args.get("gen_channels", 64),
         num_blocks=ckpt_args.get("gen_blocks", 8),
+        lr_skip=not ckpt_args.get("no_lr_skip", False),
     ).to(env.device)
-    gen.load_state_dict(ckpt["generator"])
+    load_generator_state(gen, ckpt["generator"])
+    del ckpt
 
     cache = Path(args.checkpoint).parent.parent / "normalization.json"
     if not cache.exists():
@@ -461,9 +713,11 @@ def main() -> None:
     test_loader, _ = get_dataloader(
         path=Path(args.data_dir), split="test", env=env, batch_size=args.batch_size,
         scale=scale, hr_size=hr_size, dataset_type=args.dataset_format,
+        use_native_lr=ckpt_args.get("use_native_lr", False),
         val_ratio=args.val_ratio, stats_cache_path=cache,
     )
 
+    diagnostics.phase("evaluation_materialization", max_samples=args.max_samples)
     print(f"[cls] materializing up to {args.max_samples} samples (scale={scale})...")
     try:
         data = collect_tagging_tensors(gen, test_loader, stats, env.device, max_samples=args.max_samples)
@@ -474,7 +728,7 @@ def main() -> None:
     n = y.shape[0]
     # Tagger's own train/test split, drawn from the SR generator's held-out
     # "test" split — distinct from and unrelated to the generator's val/test.
-    train_idx, test_idx = _split_indices(n, args.test_frac, args.seed)
+    train_idx, test_idx = _split_indices(n, args.test_frac, eval_seed)
     y_test = y[test_idx]
     y_test_np = y_test.numpy()
     print(f"[cls] n={n} (tagger-train={len(train_idx)} tagger-test={len(test_idx)}) "
@@ -485,14 +739,40 @@ def main() -> None:
     )
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    results: dict[str, object] = {"scale": scale, "n_train": len(train_idx), "n_test": len(test_idx)}
+    # The held-out val/test row split is scale-independent (held_out_row_split
+    # keys off row index and val_ratio only, not scale — see data/normalization.py),
+    # so with the same --data-dir and --val-ratio every scale's "test" HR images
+    # are identical. Deriving the tagger seed from scale (instead of reusing the
+    # same eval seed everywhere) is what actually makes each scale's tagger an
+    # independent training run rather than a near-duplicate of the others.
+    tagger_seed = args.tagger_seed
+    if tagger_seed is None:
+        tagger_seed = (eval_seed + scale) if args.tagger_seed_per_scale else eval_seed
 
-    # ---- Train the fixed HR tagger, score every source ----
-    print("[cls] training fixed HR tagger...")
-    hr_tagger = train_tagger(
-        data["hr"][train_idx], y[train_idx], env.device,
-        width=args.tagger_width, epochs=args.tagger_epochs, seed=args.seed,
+    results: dict[str, object] = {
+        "scale": scale,
+        "n_train": len(train_idx),
+        "n_test": len(test_idx),
+        "physics_loss_type": ckpt_args.get("physics_loss_type", "ratio"),
+        "lambda_physics": ckpt_args.get("lambda_physics"),
+        "eval_seed": eval_seed,
+        "test_frac": args.test_frac,
+        "max_samples": args.max_samples,
+        "tagger_seed": tagger_seed,
+        "tagger_width": args.tagger_width,
+        "tagger_epochs": args.tagger_epochs,
+    }
+
+    # ---- Fixed HR tagger (frozen artifact if --tagger-checkpoint is given),
+    # score every source. Without --tagger-checkpoint this trains inline exactly
+    # as before the SEMD/eval-seed work landed.
+    diagnostics.phase("hr_tagger_training_or_load")
+    hr_tagger, tagger_provenance = _load_or_train_hr_tagger(
+        args.tagger_checkpoint, data["hr"][train_idx], y[train_idx], env.device,
+        width=args.tagger_width, epochs=args.tagger_epochs, seed=tagger_seed, test_idx=test_idx,
+        test_frac=args.test_frac, n=n,
     )
+    results["tagger_provenance"] = tagger_provenance
     scores = {src: tagger_scores(hr_tagger, data[src][test_idx], env.device) for src in _SOURCES}
 
     roc: dict[str, dict] = {}
@@ -540,7 +820,7 @@ def main() -> None:
         for src in _SOURCES:
             t = train_tagger(
                 data[src][train_idx], y[train_idx], env.device,
-                width=args.tagger_width, epochs=args.tagger_epochs, seed=args.seed,
+                width=args.tagger_width, epochs=args.tagger_epochs, seed=tagger_seed,
             )
             s = tagger_scores(t, data[src][test_idx], env.device)
             fpr, tpr, _thr, auc = roc_points(s, y_test_np)
@@ -579,6 +859,44 @@ def main() -> None:
         print("[cls] no pt in batch (HDF5?) — skipping pt_correlation.png")
     results["physics_correlation"] = physics
 
+    # ---- SEMD: the geometry-aware metric (see spectral.py) ----
+    diagnostics.phase("evaluation_semd", topk=args.semd_topk, chunk=args.semd_chunk)
+    print(f"[cls] computing SEMD (top-{args.semd_topk} pixel approximation)...")
+    semd_sr = _semd_vs_hr(data["sr"], data["hr"], stats, args, env.device)
+    semd_lr = _semd_vs_hr(data["lr"], data["hr"], stats, args, env.device)
+    sr_mean, lr_mean = float(np.mean(semd_sr)), float(np.mean(semd_lr))
+    semd_block: dict[str, object] = {
+        "method": "SEMD (top-K pixel approximation)",
+        "reference": "arXiv:2410.05379v3 Eq. (2.19), p=2 closed form",
+        "caveat": (
+            "Top-K truncation and a pixel-grid ground metric make this an "
+            "approximation of the paper's observable, not the observable itself."
+        ),
+        "params": {
+            "topk": args.semd_topk,
+            "omega_R": args.semd_omega_R,
+            "beta": args.semd_beta,
+            "threshold": args.semd_threshold,
+            "n_samples": int(semd_sr.size),
+        },
+        "sr_vs_hr": {"mean": sr_mean, "std": float(np.std(semd_sr))},
+        "lr_vs_hr": {"mean": lr_mean, "std": float(np.std(semd_lr))},
+        # Normalized so it is comparable across scales: 1.0 = SR matches HR
+        # geometry exactly, 0.0 = SR is no better than bicubic LR.
+        "semd_recovery": (1.0 - sr_mean / lr_mean) if lr_mean > 0 else float("nan"),
+    }
+    results["semd"] = semd_block
+    print(f"[cls] SEMD(SR,HR)={sr_mean:.5g}  SEMD(LR,HR)={lr_mean:.5g}  "
+          f"recovery={semd_block['semd_recovery']:.4f}")
+
+    try:
+        curves = {src: _mean_spectral_curve(data[src], stats, args, env.device)
+                  for src in ("hr", "lr", "sr")}
+        _fig_spectral_overlay(curves, {"sr_mean": sr_mean, "lr_mean": lr_mean},
+                              out_dir / "spectral_function.png")
+    except Exception as exc:  # figure is diagnostic; never fail the eval for it
+        print(f"[cls] spectral overlay figure skipped: {exc}")
+
     # ---- JSON + EXPLANATION (drop numpy arrays from the JSON payload) ----
     out_json = out_dir / "classification_eval.json"
     out_json.write_text(json.dumps(results, indent=2, default=float), encoding="utf-8")
@@ -586,6 +904,7 @@ def main() -> None:
 
     print(f"[cls] wrote {out_json}")
     print(f"[cls] figures + EXPLANATION.md -> {out_dir}")
+    diagnostics.close()
 
 
 if __name__ == "__main__":

@@ -25,7 +25,7 @@ from multiscale_sr.data import get_dataloader
 from multiscale_sr.data.normalization import ChannelStats
 from multiscale_sr.engine import evaluate, render_sample_grid
 from multiscale_sr.models import Generator
-from multiscale_sr.utils import resolve_env
+from multiscale_sr.utils import load_generator_state, resolve_env
 
 PACKAGE_ROOT = Path(__file__).resolve().parent
 
@@ -51,7 +51,7 @@ def main() -> None:
     env = resolve_env()
     print(f"[env] {env}")
 
-    ckpt = torch.load(args.checkpoint, map_location=env.device)
+    ckpt = torch.load(args.checkpoint, map_location="cpu", weights_only=True)
     ckpt_args = ckpt.get("args", {})
     scale = args.scale or ckpt_args.get("scale")
     hr_size = args.hr_size or ckpt_args.get("hr_size", 125)
@@ -62,8 +62,9 @@ def main() -> None:
     gen = Generator(
         base_channels=ckpt_args.get("gen_channels", 64),
         num_blocks=ckpt_args.get("gen_blocks", 8),
+        lr_skip=not ckpt_args.get("no_lr_skip", False),
     ).to(env.device)
-    gen.load_state_dict(ckpt["generator"])
+    load_generator_state(gen, ckpt["generator"])
 
     # Stats come from the checkpoint, so skip recompute by seeding the cache.
     cache = Path(args.checkpoint).parent.parent / "normalization.json"

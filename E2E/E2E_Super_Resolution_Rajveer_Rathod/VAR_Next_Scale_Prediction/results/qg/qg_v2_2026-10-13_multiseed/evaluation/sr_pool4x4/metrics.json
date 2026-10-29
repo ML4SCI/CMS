@@ -1,0 +1,39 @@
+{
+  "run": "qg_v2_2026-10-13_multiseed_sr_pool4x4",
+  "saved": "2026-10-19 04:52:43",
+  "level": "pool4x4",
+  "n_events": 4000,
+  "lr_closure": {
+    "sr": {
+      "median_lr_closure": 0.5060012340545654,
+      "mean_lr_closure": 0.5002484321594238
+    },
+    "vqrec": {
+      "median_lr_closure": 0.45743951201438904,
+      "mean_lr_closure": 0.45455026626586914
+    },
+    "sr-sample": {
+      "median_lr_closure": 0.5095193982124329,
+      "mean_lr_closure": 0.5046250820159912
+    },
+    "uniform": {
+      "median_lr_closure": 0.0,
+      "mean_lr_closure": 0.0
+    },
+    "srproj": {
+      "median_lr_closure": 1.2047322250907655e-08,
+      "mean_lr_closure": 1.3879427385177223e-08
+    }
+  },
+  "c2st": {
+    "sr": {
+      "auc": 0.9991594865517849,
+      "accuracy": 0.996,
+      "rej_at_eff30": 1000000.0,
+      "rej_at_eff50": 1000000.0,
+      "rej_at_eff70": 1000000.0,
+      "auc_boot_err": 0.0006529809960127094,
+      "rej_at_eff50_boot_err": 0.0
+    }
+  }
+}

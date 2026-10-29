@@ -29,7 +29,17 @@ from torch.utils.data import Dataset
 from .normalization import batch_to_tensor
 
 _PHYS_COLUMNS = ("X_jets_LR", "X_jets", "pt", "m0", "y")  # HR = column index 1
-_DECODE_BATCH = 512
+_DECODE_BATCH = 32  # Bound Arrow + decoded float buffers while building full cache.
+_CACHE_VERSION = 2  # Offset/dtype-aware Arrow decoding; reject earlier caches.
+# Flush the memmap every N bytes written. Pages written to a mode="w+" memmap
+# stay dirty in the page cache until flushed, and on a container runtime those
+# dirty pages count against the memory cgroup — a full-dataset build (~15.8GB
+# for 84k jets) can therefore be OOM-killed by the host before pass 2 ends,
+# taking the whole VM with it and leaving no Python traceback. Flushing
+# periodically bounds resident dirty pages instead of letting them grow to the
+# size of the cache. Cache *contents* are unchanged, so this does not affect
+# the dataset fingerprint or invalidate existing runs.
+_FLUSH_BYTES = 512 * 1024 * 1024
 
 
 def _manifest(files: Sequence[Path]) -> list[dict]:
@@ -59,11 +69,16 @@ def _cache_is_valid(cache_dir: Path, files: Sequence[Path]) -> bool:
         meta = json.loads(meta_path.read_text())
     except Exception:
         return False
-    if meta.get("manifest") != _manifest(files):
+    if meta.get("version") != _CACHE_VERSION or meta.get("manifest") != _manifest(files):
         return False
-    n, c, h, w = meta["n"], meta["c"], meta["h"], meta["w"]
-    expected_bytes = n * c * h * w * np.dtype(np.float32).itemsize
-    return hr_path.stat().st_size == expected_bytes
+    try:
+        n, c, h, w = (int(meta[k]) for k in ("n", "c", "h", "w"))
+        expected_bytes = n * c * h * w * np.dtype(np.float32).itemsize
+        with np.load(scal_path) as scalars:
+            valid_scalars = all(len(scalars[k]) == n for k in ("pt", "m0", "y"))
+        return min(n, c, h, w) > 0 and valid_scalars and hr_path.stat().st_size == expected_bytes
+    except (KeyError, OSError, ValueError, TypeError):
+        return False
 
 
 def build_hr_cache(files: Sequence[Path], cache_dir: Path) -> dict:
@@ -76,6 +91,9 @@ def build_hr_cache(files: Sequence[Path], cache_dir: Path) -> dict:
 
     files = list(files)
     cache_dir.mkdir(parents=True, exist_ok=True)
+    # Invalidate the commit marker BEFORE truncating any cache member. A crash
+    # must never make a partially populated mmap look like a valid old cache.
+    (cache_dir / "meta.json").unlink(missing_ok=True)
 
     # Pass 1 — exact sample count from metadata (cheap, no decode).
     n = sum(pq.ParquetFile(f).metadata.num_rows for f in files)
@@ -94,7 +112,10 @@ def build_hr_cache(files: Sequence[Path], cache_dir: Path) -> dict:
     y = np.empty(n, dtype=np.int64)
 
     # Pass 2 — decode and fill.
+    sample_bytes = c * h * w * np.dtype(np.float32).itemsize
+    flush_every = max(1, _FLUSH_BYTES // max(1, sample_bytes))
     off = 0
+    unflushed = 0
     for fi, f in enumerate(files, start=1):
         pf = pq.ParquetFile(f)
         for batch in pf.iter_batches(
@@ -107,6 +128,11 @@ def build_hr_cache(files: Sequence[Path], cache_dir: Path) -> dict:
             m0[off : off + b] = np.asarray(batch.column(3).to_pylist(), dtype=np.float32)
             y[off : off + b] = np.asarray(batch.column(4).to_pylist(), dtype=np.int64)
             off += b
+            unflushed += b
+            # Write back dirty pages before they accumulate to cache size.
+            if unflushed >= flush_every:
+                hr_mm.flush()
+                unflushed = 0
         print(f"[cache] decoded {off}/{n} samples ({fi}/{len(files)} files)", flush=True)
 
     if off != n:
@@ -115,7 +141,7 @@ def build_hr_cache(files: Sequence[Path], cache_dir: Path) -> dict:
     hr_mm.flush()
     del hr_mm
     np.savez(cache_dir / "scalars.npz", pt=pt, m0=m0, y=y)
-    meta = {"n": n, "c": c, "h": h, "w": w, "manifest": _manifest(files)}
+    meta = {"version": _CACHE_VERSION, "n": n, "c": c, "h": h, "w": w, "manifest": _manifest(files)}
     (cache_dir / "meta.json").write_text(json.dumps(meta))
     print(f"[cache] built HR cache: {n} samples ({c},{h},{w}) -> {cache_dir}", flush=True)
     return meta

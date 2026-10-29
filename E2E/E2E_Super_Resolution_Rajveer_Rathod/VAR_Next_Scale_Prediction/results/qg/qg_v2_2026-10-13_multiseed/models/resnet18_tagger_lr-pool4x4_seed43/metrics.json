@@ -1,0 +1,20 @@
+{
+  "run": "qg_v2_2026-10-13_multiseed_resnet18_tagger_lr-pool4x4_seed43",
+  "saved": "2026-10-20 06:29:54",
+  "kind": "lr:pool4x4",
+  "seed": 43,
+  "val_objective": 0.7847992449811246,
+  "n_train": 32000,
+  "n_val": 4000,
+  "n_test": 4000,
+  "same_events_all_inputs": true,
+  "test": {
+    "auc": 0.8008157048476738,
+    "accuracy": 0.7245,
+    "rej_at_eff30": 21.792345585449038,
+    "rej_at_eff50": 8.505823627287853,
+    "rej_at_eff70": 4.052854122621564,
+    "auc_boot_err": 0.0062763045015382666,
+    "rej_at_eff50_boot_err": 0.5985669241690377
+  }
+}

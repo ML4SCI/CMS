@@ -44,11 +44,15 @@ def make_experiment_dir(
     scale: int,
     run_name: str,
     run_date: date | None = None,
+    run_dir: Path | None = None,
+    resume: bool = False,
 ) -> ExperimentPaths:
     """Create experiments/{date}_{dataset}_{scale}x_{run_name}/ and subdirs."""
     d = (run_date or date.today()).isoformat()
     name = f"{d}_{dataset_name}_{scale}x_{run_name}"
-    root = experiments_root / name
+    root = run_dir or experiments_root / name
+    if root.exists() and any(root.iterdir()) and not resume:
+        raise FileExistsError(f"Refusing to overwrite existing experiment: {root}")
     checkpoints = root / "checkpoints"
     figures = root / "figures"
     checkpoints.mkdir(parents=True, exist_ok=True)

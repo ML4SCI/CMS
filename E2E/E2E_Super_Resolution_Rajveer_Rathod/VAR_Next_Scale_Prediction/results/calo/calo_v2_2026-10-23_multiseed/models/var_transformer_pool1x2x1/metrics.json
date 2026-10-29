@@ -1,0 +1,6 @@
+{
+  "run": "calo_v2_2026-10-23_multiseed_var_transformer_pool1x2x1",
+  "saved": "2026-10-26 16:02:49",
+  "best_val_ce": 3.4615812744140624,
+  "last_epoch": 39
+}

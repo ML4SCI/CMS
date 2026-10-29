@@ -1,0 +1,22 @@
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.DS_Store
+.venv/
+venv/
+# data and results never go in git
+*.pt
+*.pth
+*.h5
+*.hdf5
+*.npy
+*.npz
+*.parquet
+*.db
+data/
+results/**/*.npz
+results/**/*.pt
+
+
+notebook/*.ipynb
+notebooks/

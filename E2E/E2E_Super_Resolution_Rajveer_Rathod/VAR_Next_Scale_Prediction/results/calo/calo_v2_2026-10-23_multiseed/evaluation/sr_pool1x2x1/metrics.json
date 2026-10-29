@@ -1,0 +1,39 @@
+{
+  "run": "calo_v2_2026-10-23_multiseed_sr_pool1x2x1",
+  "saved": "2026-10-26 16:35:00",
+  "level": "pool1x2x1",
+  "n_events": 10000,
+  "lr_closure": {
+    "sr": {
+      "median_lr_closure": 0.13840124011039734,
+      "mean_lr_closure": 0.17167647182941437
+    },
+    "vqrec": {
+      "median_lr_closure": 0.13092726469039917,
+      "mean_lr_closure": 0.1677839308977127
+    },
+    "sr-sample": {
+      "median_lr_closure": 0.14195537567138672,
+      "mean_lr_closure": 0.17672495543956757
+    },
+    "uniform": {
+      "median_lr_closure": 0.0,
+      "mean_lr_closure": 0.0
+    },
+    "srproj": {
+      "median_lr_closure": 2.291701939327595e-08,
+      "mean_lr_closure": 2.2779216735102636e-08
+    }
+  },
+  "c2st": {
+    "sr": {
+      "auc": 0.9999526395150287,
+      "accuracy": 0.9982,
+      "rej_at_eff30": 1000000.0,
+      "rej_at_eff50": 1000000.0,
+      "rej_at_eff70": 1000000.0,
+      "auc_boot_err": 2.4824956210123734e-05,
+      "rej_at_eff50_boot_err": 0.0
+    }
+  }
+}

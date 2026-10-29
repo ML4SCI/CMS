@@ -110,7 +110,7 @@ def _parquet_loader(
         pin_memory=env.pin_memory,
         prefetch_factor=env.prefetch_factor if nw > 0 else None,
         persistent_workers=env.persistent_workers and nw > 0,
-        drop_last=(split == "train"),
+        drop_last=False,
         collate_fn=collate,
     )
 
@@ -159,7 +159,7 @@ def _cached_parquet_loader(
         pin_memory=env.pin_memory,
         prefetch_factor=env.prefetch_factor if nw > 0 else None,
         persistent_workers=env.persistent_workers and nw > 0,
-        drop_last=(split == "train"),
+        drop_last=False,
         collate_fn=collate,
     )
 
@@ -199,7 +199,7 @@ def _hdf5_loader(
         pin_memory=env.pin_memory,
         persistent_workers=env.persistent_workers and nw > 0,
         prefetch_factor=env.prefetch_factor if nw > 0 else None,
-        drop_last=(split == "train"),
+        drop_last=False,
         collate_fn=collate,
     )
 
