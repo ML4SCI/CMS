@@ -1,0 +1,57 @@
+
+The following have been reloaded with a version change:
+  1) cudatoolkit/13.2 => cudatoolkit/13.0     2) gcc-native/14 => gcc-native/13.2
+
+===================================================================
+stage      : train_var pool2x2
+experiment : /pscratch/sd/e/ereinha/superres/experiments/qg/2026-10-13_v2_multiseed
+job        : 59734398 task 0 on nid002604
+started    : 2026-10-13 14:40:19 PDT
+code       : perlmutter-slurm a6e969c
+settings   : dataset=qg version=v2 levels='pool2x2' seeds='42 43 44' qos=shared extra=''
+python 3.12.13 | torch 2.13.0+cu130 | cuda True
+NVIDIA A100-SXM4-40GB, 40960 MiB, 0 MiB
+===================================================================
++ python -m superres.pipeline --dataset qg --stages train_var --levels pool2x2 --run-info --set paths.drive_root=/pscratch/sd/e/ereinha/superres/experiments paths.raw_root=/pscratch/sd/e/ereinha/superres/raw paths.cache_root=/pscratch/sd/e/ereinha/superres/cache version=v2 run_date=2026-10-13 run_tag=multiseed num_workers=8
+
+######## qg: train_var ########
+{'epoch': 0, 'lr': 0.0003, 'train_ce': 2.19848, 'val_ce': 1.39921, 'val_token_acc': 0.58719, 'val_token_acc_last_scale': 0.40307, 'sec': 374.7}
+{'epoch': 1, 'lr': 0.0003, 'train_ce': 1.30152, 'val_ce': 1.24193, 'val_token_acc': 0.61881, 'val_token_acc_last_scale': 0.44598, 'sec': 372.7}
+{'epoch': 2, 'lr': 0.0003, 'train_ce': 1.20814, 'val_ce': 1.18645, 'val_token_acc': 0.63033, 'val_token_acc_last_scale': 0.46217, 'sec': 372.5}
+{'epoch': 3, 'lr': 0.0003, 'train_ce': 1.16452, 'val_ce': 1.15409, 'val_token_acc': 0.6375, 'val_token_acc_last_scale': 0.47241, 'sec': 372.6}
+{'epoch': 4, 'lr': 0.00029, 'train_ce': 1.13635, 'val_ce': 1.13387, 'val_token_acc': 0.64171, 'val_token_acc_last_scale': 0.47857, 'sec': 372.9}
+{'epoch': 5, 'lr': 0.00029, 'train_ce': 1.11497, 'val_ce': 1.11779, 'val_token_acc': 0.64513, 'val_token_acc_last_scale': 0.48351, 'sec': 372.7}
+{'epoch': 6, 'lr': 0.00028, 'train_ce': 1.09712, 'val_ce': 1.10227, 'val_token_acc': 0.64899, 'val_token_acc_last_scale': 0.49033, 'sec': 372.5}
+{'epoch': 7, 'lr': 0.00028, 'train_ce': 1.07928, 'val_ce': 1.08847, 'val_token_acc': 0.65273, 'val_token_acc_last_scale': 0.49675, 'sec': 372.6}
+{'epoch': 8, 'lr': 0.00027, 'train_ce': 1.06216, 'val_ce': 1.07383, 'val_token_acc': 0.6562, 'val_token_acc_last_scale': 0.50412, 'sec': 372.5}
+{'epoch': 9, 'lr': 0.00026, 'train_ce': 1.04529, 'val_ce': 1.0586, 'val_token_acc': 0.6606, 'val_token_acc_last_scale': 0.51135, 'sec': 372.9}
+{'epoch': 10, 'lr': 0.00025, 'train_ce': 1.02603, 'val_ce': 1.03684, 'val_token_acc': 0.66589, 'val_token_acc_last_scale': 0.52099, 'sec': 373.5}
+{'epoch': 11, 'lr': 0.00024, 'train_ce': 1.00813, 'val_ce': 1.02488, 'val_token_acc': 0.66908, 'val_token_acc_last_scale': 0.52809, 'sec': 373.2}
+{'epoch': 12, 'lr': 0.00024, 'train_ce': 0.99159, 'val_ce': 1.00943, 'val_token_acc': 0.6734, 'val_token_acc_last_scale': 0.53546, 'sec': 372.5}
+{'epoch': 13, 'lr': 0.00023, 'train_ce': 0.97601, 'val_ce': 0.99677, 'val_token_acc': 0.67666, 'val_token_acc_last_scale': 0.54185, 'sec': 372.7}
+{'epoch': 14, 'lr': 0.00021, 'train_ce': 0.96219, 'val_ce': 0.98932, 'val_token_acc': 0.67812, 'val_token_acc_last_scale': 0.54608, 'sec': 372.5}
+{'epoch': 15, 'lr': 0.0002, 'train_ce': 0.94984, 'val_ce': 0.97761, 'val_token_acc': 0.68147, 'val_token_acc_last_scale': 0.55138, 'sec': 372.6}
+{'epoch': 16, 'lr': 0.00019, 'train_ce': 0.93895, 'val_ce': 0.96828, 'val_token_acc': 0.68407, 'val_token_acc_last_scale': 0.55637, 'sec': 372.7}
+{'epoch': 17, 'lr': 0.00018, 'train_ce': 0.92923, 'val_ce': 0.96331, 'val_token_acc': 0.68552, 'val_token_acc_last_scale': 0.5595, 'sec': 372.6}
+{'epoch': 18, 'lr': 0.00017, 'train_ce': 0.92027, 'val_ce': 0.95855, 'val_token_acc': 0.68631, 'val_token_acc_last_scale': 0.56118, 'sec': 372.6}
+{'epoch': 19, 'lr': 0.00016, 'train_ce': 0.91204, 'val_ce': 0.95315, 'val_token_acc': 0.68822, 'val_token_acc_last_scale': 0.56445, 'sec': 372.5}
+{'epoch': 20, 'lr': 0.00014, 'train_ce': 0.90452, 'val_ce': 0.95078, 'val_token_acc': 0.68864, 'val_token_acc_last_scale': 0.56506, 'sec': 372.5}
+{'epoch': 21, 'lr': 0.00013, 'train_ce': 0.89748, 'val_ce': 0.94598, 'val_token_acc': 0.69014, 'val_token_acc_last_scale': 0.56784, 'sec': 372.5}
+{'epoch': 22, 'lr': 0.00012, 'train_ce': 0.89076, 'val_ce': 0.94447, 'val_token_acc': 0.69096, 'val_token_acc_last_scale': 0.56893, 'sec': 372.5}
+{'epoch': 23, 'lr': 0.00011, 'train_ce': 0.88451, 'val_ce': 0.94214, 'val_token_acc': 0.69146, 'val_token_acc_last_scale': 0.57009, 'sec': 372.6}
+{'epoch': 24, 'lr': 0.0001, 'train_ce': 0.87861, 'val_ce': 0.93923, 'val_token_acc': 0.69192, 'val_token_acc_last_scale': 0.57096, 'sec': 372.6}
+{'epoch': 25, 'lr': 9e-05, 'train_ce': 0.8729, 'val_ce': 0.93751, 'val_token_acc': 0.69281, 'val_token_acc_last_scale': 0.57259, 'sec': 372.5}
+{'epoch': 26, 'lr': 8e-05, 'train_ce': 0.86762, 'val_ce': 0.93884, 'val_token_acc': 0.6926, 'val_token_acc_last_scale': 0.57235, 'sec': 372.5}
+{'epoch': 27, 'lr': 6e-05, 'train_ce': 0.86262, 'val_ce': 0.93748, 'val_token_acc': 0.6937, 'val_token_acc_last_scale': 0.57393, 'sec': 372.5}
+{'epoch': 28, 'lr': 6e-05, 'train_ce': 0.85788, 'val_ce': 0.93703, 'val_token_acc': 0.69371, 'val_token_acc_last_scale': 0.57399, 'sec': 372.5}
+{'epoch': 29, 'lr': 5e-05, 'train_ce': 0.85351, 'val_ce': 0.9357, 'val_token_acc': 0.69422, 'val_token_acc_last_scale': 0.57472, 'sec': 372.6}
+{'epoch': 30, 'lr': 4e-05, 'train_ce': 0.84943, 'val_ce': 0.93612, 'val_token_acc': 0.69434, 'val_token_acc_last_scale': 0.57485, 'sec': 372.7}
+{'epoch': 31, 'lr': 3e-05, 'train_ce': 0.84575, 'val_ce': 0.93599, 'val_token_acc': 0.69454, 'val_token_acc_last_scale': 0.57529, 'sec': 372.5}
+{'epoch': 32, 'lr': 2e-05, 'train_ce': 0.84237, 'val_ce': 0.93647, 'val_token_acc': 0.69473, 'val_token_acc_last_scale': 0.57564, 'sec': 372.7}
+{'epoch': 33, 'lr': 2e-05, 'train_ce': 0.83941, 'val_ce': 0.93632, 'val_token_acc': 0.69497, 'val_token_acc_last_scale': 0.57608, 'sec': 372.5}
+{'epoch': 34, 'lr': 1e-05, 'train_ce': 0.83686, 'val_ce': 0.93725, 'val_token_acc': 0.69464, 'val_token_acc_last_scale': 0.57546, 'sec': 372.4}
+{'epoch': 35, 'lr': 1e-05, 'train_ce': 0.83473, 'val_ce': 0.93627, 'val_token_acc': 0.69488, 'val_token_acc_last_scale': 0.5759, 'sec': 372.4}
+{'epoch': 36, 'lr': 0.0, 'train_ce': 0.83311, 'val_ce': 0.93614, 'val_token_acc': 0.69502, 'val_token_acc_last_scale': 0.57606, 'sec': 372.6}
+{'epoch': 37, 'lr': 0.0, 'train_ce': 0.83183, 'val_ce': 0.93704, 'val_token_acc': 0.69501, 'val_token_acc_last_scale': 0.57611, 'sec': 372.6}
+early stop
+-- train_var finished in 236 min

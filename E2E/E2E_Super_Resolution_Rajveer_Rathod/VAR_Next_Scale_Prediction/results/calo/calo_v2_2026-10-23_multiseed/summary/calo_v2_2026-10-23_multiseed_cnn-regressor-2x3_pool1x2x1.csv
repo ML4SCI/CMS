@@ -1,0 +1,5 @@
+,A: trained on HR,B: trained on each input
+HR,0.0712 ± 0.0005 (3 seeds),0.0712 ± 0.0005 (3 seeds)
+LR,0.0741 ± 0.0007 (3 seeds),0.0735 ± 0.0006 (3 seeds)
+SR,0.0751 ± 0.0009 (3 seeds),0.0726 ± 0.0003 (3 seeds)
+SR + energy constraint,0.0729 ± 0.0009 (3 seeds),

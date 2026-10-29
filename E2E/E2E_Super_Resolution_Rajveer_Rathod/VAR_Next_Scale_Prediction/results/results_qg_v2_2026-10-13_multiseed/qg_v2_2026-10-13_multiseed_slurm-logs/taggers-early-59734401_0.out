@@ -1,0 +1,39 @@
+
+The following have been reloaded with a version change:
+  1) cudatoolkit/13.2 => cudatoolkit/13.0     2) gcc-native/14 => gcc-native/13.2
+
+===================================================================
+stage      : train_taggers hr seed 42
+experiment : /pscratch/sd/e/ereinha/superres/experiments/qg/2026-10-13_v2_multiseed
+job        : 59735108 task 0 on nid001933
+started    : 2026-10-13 07:55:47 PDT
+code       : perlmutter-slurm a6e969c
+settings   : dataset=qg version=v2 levels='pool2x2' seeds='42 43 44' qos=shared extra=''
+python 3.12.13 | torch 2.13.0+cu130 | cuda True
+NVIDIA A100-SXM4-40GB, 40960 MiB, 0 MiB
+===================================================================
++ python -m superres.pipeline --dataset qg --stages train_taggers --kinds hr --seeds 42 --run-info --set paths.drive_root=/pscratch/sd/e/ereinha/superres/experiments paths.raw_root=/pscratch/sd/e/ereinha/superres/raw paths.cache_root=/pscratch/sd/e/ereinha/superres/cache version=v2 run_date=2026-10-13 run_tag=multiseed num_workers=8
+
+######## qg: train_taggers ########
+
+=== tagger on hr, seed 42 ===
+{'epoch': 0, 'lr': 0.00025, 'train_loss': 0.67149, 'train_accuracy': 0.56894, 'val_auc': 0.72768, 'val_accuracy': 0.52325, 'val_rej_at_eff30': 11.22905, 'val_rej_at_eff50': 5.15007, 'val_rej_at_eff70': 2.75154, 'val_loss': 0.89854, 'best_so_far': True, 'sec': 58.7}
+{'epoch': 1, 'lr': 0.0005, 'train_loss': 0.59143, 'train_accuracy': 0.69388, 'val_auc': 0.76276, 'val_accuracy': 0.703, 'val_rej_at_eff30': 13.62052, 'val_rej_at_eff50': 7.00348, 'val_rej_at_eff70': 3.45955, 'val_loss': 0.58862, 'best_so_far': True, 'sec': 14.4}
+{'epoch': 2, 'lr': 0.0005, 'train_loss': 0.57477, 'train_accuracy': 0.70859, 'val_auc': 0.77703, 'val_accuracy': 0.71825, 'val_rej_at_eff30': 17.55459, 'val_rej_at_eff50': 7.65714, 'val_rej_at_eff70': 3.90671, 'val_loss': 0.56949, 'best_so_far': True, 'sec': 14.3}
+{'epoch': 3, 'lr': 0.00048, 'train_loss': 0.56204, 'train_accuracy': 0.71828, 'val_auc': 0.77751, 'val_accuracy': 0.7045, 'val_rej_at_eff30': 15.95238, 'val_rej_at_eff50': 7.49767, 'val_rej_at_eff70': 3.70849, 'val_loss': 0.57748, 'best_so_far': True, 'sec': 14.8}
+{'epoch': 4, 'lr': 0.00047, 'train_loss': 0.55688, 'train_accuracy': 0.72081, 'val_auc': 0.78313, 'val_accuracy': 0.728, 'val_rej_at_eff30': 17.32759, 'val_rej_at_eff50': 8.10484, 'val_rej_at_eff70': 4.11043, 'val_loss': 0.56657, 'best_so_far': True, 'sec': 14.3}
+{'epoch': 5, 'lr': 0.00044, 'train_loss': 0.55383, 'train_accuracy': 0.72775, 'val_auc': 0.78455, 'val_accuracy': 0.7185, 'val_rej_at_eff30': 16.57732, 'val_rej_at_eff50': 7.5, 'val_rej_at_eff70': 4.12731, 'val_loss': 0.57014, 'best_so_far': True, 'sec': 14.3}
+{'epoch': 6, 'lr': 0.00041, 'train_loss': 0.54969, 'train_accuracy': 0.72878, 'val_auc': 0.78423, 'val_accuracy': 0.725, 'val_rej_at_eff30': 17.14286, 'val_rej_at_eff50': 8.32298, 'val_rej_at_eff70': 3.94118, 'val_loss': 0.56271, 'best_so_far': False, 'sec': 14.2}
+{'epoch': 7, 'lr': 0.00038, 'train_loss': 0.54688, 'train_accuracy': 0.73141, 'val_auc': 0.78753, 'val_accuracy': 0.72625, 'val_rej_at_eff30': 18.40659, 'val_rej_at_eff50': 8.30579, 'val_rej_at_eff70': 4.03614, 'val_loss': 0.5597, 'best_so_far': True, 'sec': 14.3}
+{'epoch': 8, 'lr': 0.00034, 'train_loss': 0.54495, 'train_accuracy': 0.73291, 'val_auc': 0.78701, 'val_accuracy': 0.721, 'val_rej_at_eff30': 18.78505, 'val_rej_at_eff50': 8.2377, 'val_rej_at_eff70': 4.02, 'val_loss': 0.56429, 'best_so_far': False, 'sec': 14.3}
+{'epoch': 9, 'lr': 0.00029, 'train_loss': 0.53757, 'train_accuracy': 0.73653, 'val_auc': 0.78603, 'val_accuracy': 0.71325, 'val_rej_at_eff30': 17.81388, 'val_rej_at_eff50': 8.10484, 'val_rej_at_eff70': 3.94118, 'val_loss': 0.57308, 'best_so_far': False, 'sec': 14.3}
+{'epoch': 10, 'lr': 0.00025, 'train_loss': 0.53488, 'train_accuracy': 0.73953, 'val_auc': 0.78775, 'val_accuracy': 0.72525, 'val_rej_at_eff30': 18.54244, 'val_rej_at_eff50': 8.2716, 'val_rej_at_eff70': 4.06883, 'val_loss': 0.55983, 'best_so_far': True, 'sec': 14.3}
+{'epoch': 11, 'lr': 0.00021, 'train_loss': 0.53072, 'train_accuracy': 0.74216, 'val_auc': 0.78626, 'val_accuracy': 0.722, 'val_rej_at_eff30': 18.75, 'val_rej_at_eff50': 8.18182, 'val_rej_at_eff70': 3.91051, 'val_loss': 0.56495, 'best_so_far': False, 'sec': 14.3}
+{'epoch': 12, 'lr': 0.00016, 'train_loss': 0.52641, 'train_accuracy': 0.74416, 'val_auc': 0.7882, 'val_accuracy': 0.724, 'val_rej_at_eff30': 17.15505, 'val_rej_at_eff50': 8.10484, 'val_rej_at_eff70': 4.02, 'val_loss': 0.56249, 'best_so_far': True, 'sec': 14.3}
+{'epoch': 13, 'lr': 0.00013, 'train_loss': 0.52113, 'train_accuracy': 0.74772, 'val_auc': 0.78782, 'val_accuracy': 0.7245, 'val_rej_at_eff30': 16.89076, 'val_rej_at_eff50': 7.99205, 'val_rej_at_eff70': 3.91813, 'val_loss': 0.56913, 'best_so_far': False, 'sec': 14.3}
+{'epoch': 14, 'lr': 9e-05, 'train_loss': 0.51629, 'train_accuracy': 0.75275, 'val_auc': 0.78564, 'val_accuracy': 0.71125, 'val_rej_at_eff30': 17.72487, 'val_rej_at_eff50': 8.42767, 'val_rej_at_eff70': 3.94892, 'val_loss': 0.57269, 'best_so_far': False, 'sec': 14.4}
+{'epoch': 15, 'lr': 6e-05, 'train_loss': 0.5094, 'train_accuracy': 0.75628, 'val_auc': 0.78463, 'val_accuracy': 0.72225, 'val_rej_at_eff30': 16.34146, 'val_rej_at_eff50': 8.10484, 'val_rej_at_eff70': 3.90291, 'val_loss': 0.56799, 'best_so_far': False, 'sec': 14.4}
+{'epoch': 16, 'lr': 3e-05, 'train_loss': 0.50289, 'train_accuracy': 0.75928, 'val_auc': 0.78273, 'val_accuracy': 0.7225, 'val_rej_at_eff30': 15.73386, 'val_rej_at_eff50': 8.00797, 'val_rej_at_eff70': 3.82857, 'val_loss': 0.57155, 'best_so_far': False, 'sec': 14.3}
+{'epoch': 17, 'lr': 2e-05, 'train_loss': 0.49858, 'train_accuracy': 0.7635, 'val_auc': 0.78268, 'val_accuracy': 0.72575, 'val_rej_at_eff30': 15.26582, 'val_rej_at_eff50': 7.85156, 'val_rej_at_eff70': 3.95669, 'val_loss': 0.57531, 'best_so_far': False, 'sec': 14.3}
+[qg_v2_2026-10-13_multiseed_resnet18_tagger_hr_seed42] test: {'auc': 0.8064084619736341, 'accuracy': 0.73375, 'rej_at_eff30': 21.78409090909091, 'rej_at_eff50': 9.085308056872037, 'rej_at_eff70': 4.376712328767123, 'auc_boot_err': 0.006709490762571875, 'rej_at_eff50_boot_err': 0.6401279155369282}
+-- train_taggers finished in 5 min

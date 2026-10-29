@@ -1,0 +1,247 @@
+{
+  "run": "qg_v2_2026-10-13_multiseed_vqvae_tokenizer",
+  "created": "2026-10-13 08:14:39",
+  "config": {
+    "version": "v2",
+    "run_date": "2026-10-13",
+    "run_tag": "multiseed",
+    "seed": 42,
+    "num_workers": 8,
+    "amp": true,
+    "paths": {
+      "drive_root": "/pscratch/sd/e/ereinha/superres/experiments",
+      "raw_root": "/pscratch/sd/e/ereinha/superres/raw",
+      "cache_root": "/pscratch/sd/e/ereinha/superres/cache"
+    },
+    "optuna": {
+      "vqvae_trials": 12,
+      "var_trials": 8,
+      "tagger_trials": 12,
+      "trial_epochs": {
+        "vqvae": 4,
+        "var": 4,
+        "tagger": 4
+      },
+      "trial_max_train": 10000,
+      "var_tune_level": "pool8x8",
+      "use_tuned": true
+    },
+    "data": {
+      "cernbox_token": "EYgmOkI9BjwxNqy",
+      "extra_urls": [],
+      "native_shape": [
+        125,
+        125
+      ],
+      "pad": [
+        [
+          1,
+          2
+        ],
+        [
+          1,
+          2
+        ]
+      ],
+      "hr_shape": [
+        128,
+        128
+      ],
+      "channels": [
+        "tracks",
+        "ecal",
+        "hcal"
+      ],
+      "circular_dims": [],
+      "levels": {
+        "pool2x2": [
+          2,
+          2
+        ],
+        "pool4x4": [
+          4,
+          4
+        ],
+        "pool8x8": [
+          8,
+          8
+        ]
+      },
+      "max_samples": 40000,
+      "split": [
+        0.8,
+        0.1,
+        0.1
+      ],
+      "pixel_size": 0.0174,
+      "center_index": 63,
+      "occupancy_threshold": 0.001,
+      "signal_label": 1
+    },
+    "vqvae": {
+      "widths": [
+        32,
+        64,
+        128
+      ],
+      "strides": [
+        [
+          2,
+          2
+        ],
+        [
+          2,
+          2
+        ]
+      ],
+      "n_res": 1,
+      "z_ch": 32,
+      "codebook_size": 1024,
+      "beta": 0.25,
+      "scales": [
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          2
+        ],
+        [
+          3,
+          3
+        ],
+        [
+          4,
+          4
+        ],
+        [
+          6,
+          6
+        ],
+        [
+          8,
+          8
+        ],
+        [
+          12,
+          12
+        ],
+        [
+          16,
+          16
+        ],
+        [
+          20,
+          20
+        ],
+        [
+          24,
+          24
+        ],
+        [
+          32,
+          32
+        ]
+      ],
+      "lr": 0.0003,
+      "weight_decay": 0.0,
+      "batch_size": 64,
+      "epochs": 30,
+      "energy_weight": 0.3,
+      "hit_weight": 1.0,
+      "hit_pos_weight": 1.0,
+      "hit_threshold": 0.5,
+      "energy_mask": "soft",
+      "lr_decoder": true,
+      "dead_thresh": 0.01,
+      "patience": 6
+    },
+    "var": {
+      "depth": 6,
+      "width": 384,
+      "heads": 6,
+      "mlp_ratio": 4.0,
+      "drop": 0.05,
+      "lr_enc_widths": [
+        32,
+        64,
+        128
+      ],
+      "lr": 0.0003,
+      "weight_decay": 0.05,
+      "label_smoothing": 0.0,
+      "batch_size": 32,
+      "epochs": 40,
+      "patience": 8,
+      "temperature": 0.8,
+      "top_k": 50,
+      "decode": "greedy",
+      "decodes": [
+        "greedy",
+        "sample"
+      ],
+      "gen_splits": [
+        "train",
+        "val",
+        "test"
+      ],
+      "gen_overwrite": false,
+      "gen_batch_size": 128,
+      "gen_max_per_split": null,
+      "sr_dtype": "float16"
+    },
+    "tagger": {
+      "task": "classification",
+      "arch": "resnet18",
+      "widths": [
+        32,
+        64,
+        128,
+        128
+      ],
+      "resnet18": {
+        "lr": 0.0005,
+        "weight_decay": 0.05,
+        "dropout": 0.3,
+        "augment": true
+      },
+      "dropout": 0.1,
+      "lr": 0.001,
+      "weight_decay": 0.0001,
+      "batch_size": 128,
+      "epochs": 20,
+      "patience": 5,
+      "max_train": null,
+      "seeds": [
+        42
+      ],
+      "retrain": false
+    },
+    "eval": {
+      "max_events": 4000,
+      "c2st_max": 4000,
+      "c2st_epochs": 5,
+      "nsub_max": 2000,
+      "hist_bins": 40,
+      "n_examples": 4,
+      "channel_scale": "linear",
+      "methods": [
+        "lr",
+        "sr"
+      ],
+      "diagnostics": [
+        "vqrec",
+        "sr-greedy",
+        "sr-sample",
+        "uniform",
+        "srproj"
+      ],
+      "c2st_methods": [
+        "sr"
+      ]
+    },
+    "dataset": "qg"
+  },
+  "n_params": 1843526
+}

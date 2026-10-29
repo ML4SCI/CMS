@@ -1,0 +1,6 @@
+{
+  "run": "qg_v2_2026-10-13_multiseed_var_transformer_pool4x4",
+  "saved": "2026-10-18 23:50:25",
+  "best_val_ce": 1.2354063735177865,
+  "last_epoch": 39
+}

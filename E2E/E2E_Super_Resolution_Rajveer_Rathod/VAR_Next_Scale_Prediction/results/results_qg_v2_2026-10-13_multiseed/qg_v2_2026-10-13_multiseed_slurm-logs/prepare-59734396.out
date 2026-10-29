@@ -1,0 +1,32 @@
+
+The following have been reloaded with a version change:
+  1) cudatoolkit/13.2 => cudatoolkit/13.0     2) gcc-native/14 => gcc-native/13.2
+
+===================================================================
+stage      : download + prepare
+experiment : /pscratch/sd/e/ereinha/superres/experiments/qg/2026-10-13_v2_multiseed
+job        : 59734396 task - on nid003576
+started    : 2026-10-13 06:52:18 PDT
+code       : perlmutter-slurm a6e969c
+settings   : dataset=qg version=v2 levels='pool2x2' seeds='42 43 44' qos=shared extra=''
+python 3.12.13 | torch 2.13.0+cu130 | cuda True
+NVIDIA A100-SXM4-40GB, 40960 MiB, 0 MiB
+===================================================================
++ python -m superres.pipeline --dataset qg --stages download,prepare --run-info --set paths.drive_root=/pscratch/sd/e/ereinha/superres/experiments paths.raw_root=/pscratch/sd/e/ereinha/superres/raw paths.cache_root=/pscratch/sd/e/ereinha/superres/cache version=v2 run_date=2026-10-13 run_tag=multiseed num_workers=8
+
+######## qg: download ########
+CERNBox share contains 3 files:
+   QCDToGGQQ_IMGjet_RH1all_jet0_run1_n47540_LR.parquet  (1.26 GB)
+   QCDToGGQQ_IMGjet_RH1all_jet0_run0_n36272_LR.parquet  (0.96 GB)
+   QCDToGGQQ_IMGjet_RH1all_jet0_run2_n55494_LR.parquet  (1.50 GB)
+[skip] QCDToGGQQ_IMGjet_RH1all_jet0_run1_n47540_LR.parquet already downloaded
+[skip] QCDToGGQQ_IMGjet_RH1all_jet0_run0_n36272_LR.parquet already downloaded
+[skip] QCDToGGQQ_IMGjet_RH1all_jet0_run2_n55494_LR.parquet already downloaded
+Jet data files:
+   /pscratch/sd/e/ereinha/superres/raw/qg/QCDToGGQQ_IMGjet_RH1all_jet0_run0_n36272_LR.parquet
+   /pscratch/sd/e/ereinha/superres/raw/qg/QCDToGGQQ_IMGjet_RH1all_jet0_run1_n47540_LR.parquet
+   /pscratch/sd/e/ereinha/superres/raw/qg/QCDToGGQQ_IMGjet_RH1all_jet0_run2_n55494_LR.parquet
+
+######## qg: prepare ########
+cache exists: /pscratch/sd/e/ereinha/superres/cache/qg/meta.json
+-- download,prepare finished in 0 min

@@ -1,0 +1,35 @@
+
+The following have been reloaded with a version change:
+  1) cudatoolkit/13.2 => cudatoolkit/13.0     2) gcc-native/14 => gcc-native/13.2
+
+===================================================================
+stage      : train_taggers sr:pool2x2 seed 43
+experiment : /pscratch/sd/e/ereinha/superres/experiments/qg/2026-10-13_v2_multiseed
+job        : 59766056 task 1 on nid001301
+started    : 2026-10-14 03:35:43 PDT
+code       : perlmutter-slurm a6e969c
+settings   : dataset=qg version=v2 levels='pool2x2' seeds='42 43 44' qos=shared extra=''
+python 3.12.13 | torch 2.13.0+cu130 | cuda True
+NVIDIA A100-SXM4-40GB, 40960 MiB, 0 MiB
+===================================================================
++ python -m superres.pipeline --dataset qg --stages train_taggers --kinds sr:pool2x2 --seeds 43 --run-info --set paths.drive_root=/pscratch/sd/e/ereinha/superres/experiments paths.raw_root=/pscratch/sd/e/ereinha/superres/raw paths.cache_root=/pscratch/sd/e/ereinha/superres/cache version=v2 run_date=2026-10-13 run_tag=multiseed num_workers=8
+
+######## qg: train_taggers ########
+
+=== tagger on sr:pool2x2, seed 43 ===
+{'epoch': 0, 'lr': 0.00025, 'train_loss': 0.67762, 'train_accuracy': 0.55781, 'val_auc': 0.69875, 'val_accuracy': 0.613, 'val_rej_at_eff30': 9.80488, 'val_rej_at_eff50': 4.28876, 'val_rej_at_eff70': 2.49845, 'val_loss': 0.65141, 'best_so_far': True, 'sec': 32.3}
+{'epoch': 1, 'lr': 0.0005, 'train_loss': 0.60981, 'train_accuracy': 0.67269, 'val_auc': 0.73408, 'val_accuracy': 0.57675, 'val_rej_at_eff30': 11.59934, 'val_rej_at_eff50': 5.17774, 'val_rej_at_eff70': 2.85511, 'val_loss': 0.73198, 'best_so_far': True, 'sec': 14.2}
+{'epoch': 2, 'lr': 0.0005, 'train_loss': 0.58982, 'train_accuracy': 0.69525, 'val_auc': 0.76396, 'val_accuracy': 0.706, 'val_rej_at_eff30': 16.20968, 'val_rej_at_eff50': 7.45826, 'val_rej_at_eff70': 3.41837, 'val_loss': 0.58117, 'best_so_far': True, 'sec': 14.2}
+{'epoch': 3, 'lr': 0.00048, 'train_loss': 0.5822, 'train_accuracy': 0.70172, 'val_auc': 0.76499, 'val_accuracy': 0.615, 'val_rej_at_eff30': 14.77941, 'val_rej_at_eff50': 7.23022, 'val_rej_at_eff70': 3.54107, 'val_loss': 0.67125, 'best_so_far': True, 'sec': 14.2}
+{'epoch': 4, 'lr': 0.00047, 'train_loss': 0.57712, 'train_accuracy': 0.70544, 'val_auc': 0.76661, 'val_accuracy': 0.6905, 'val_rej_at_eff30': 16.82008, 'val_rej_at_eff50': 7.47212, 'val_rej_at_eff70': 3.44178, 'val_loss': 0.59834, 'best_so_far': True, 'sec': 14.2}
+{'epoch': 5, 'lr': 0.00044, 'train_loss': 0.57426, 'train_accuracy': 0.70834, 'val_auc': 0.76568, 'val_accuracy': 0.6545, 'val_rej_at_eff30': 16.2973, 'val_rej_at_eff50': 7.00348, 'val_rej_at_eff70': 3.44768, 'val_loss': 0.63527, 'best_so_far': False, 'sec': 14.2}
+{'epoch': 6, 'lr': 0.00041, 'train_loss': 0.57203, 'train_accuracy': 0.70925, 'val_auc': 0.76177, 'val_accuracy': 0.64575, 'val_rej_at_eff30': 15.11278, 'val_rej_at_eff50': 6.76768, 'val_rej_at_eff70': 3.43003, 'val_loss': 0.63733, 'best_so_far': False, 'sec': 14.2}
+{'epoch': 7, 'lr': 0.00038, 'train_loss': 0.56941, 'train_accuracy': 0.71209, 'val_auc': 0.76184, 'val_accuracy': 0.68825, 'val_rej_at_eff30': 15.64202, 'val_rej_at_eff50': 6.36076, 'val_rej_at_eff70': 3.39527, 'val_loss': 0.60496, 'best_so_far': False, 'sec': 14.2}
+{'epoch': 8, 'lr': 0.00034, 'train_loss': 0.56695, 'train_accuracy': 0.71178, 'val_auc': 0.77029, 'val_accuracy': 0.6955, 'val_rej_at_eff30': 15.08039, 'val_rej_at_eff50': 7.2043, 'val_rej_at_eff70': 3.60344, 'val_loss': 0.59603, 'best_so_far': True, 'sec': 14.2}
+{'epoch': 9, 'lr': 0.00029, 'train_loss': 0.56431, 'train_accuracy': 0.71578, 'val_auc': 0.76713, 'val_accuracy': 0.7025, 'val_rej_at_eff30': 15.11278, 'val_rej_at_eff50': 6.84449, 'val_rej_at_eff70': 3.53873, 'val_loss': 0.59016, 'best_so_far': False, 'sec': 14.2}
+{'epoch': 10, 'lr': 0.00025, 'train_loss': 0.56231, 'train_accuracy': 0.71534, 'val_auc': 0.77023, 'val_accuracy': 0.7105, 'val_rej_at_eff30': 15.99469, 'val_rej_at_eff50': 7.37164, 'val_rej_at_eff70': 3.57016, 'val_loss': 0.57503, 'best_so_far': False, 'sec': 14.1}
+{'epoch': 11, 'lr': 0.00021, 'train_loss': 0.55958, 'train_accuracy': 0.71741, 'val_auc': 0.76914, 'val_accuracy': 0.7095, 'val_rej_at_eff30': 16.63907, 'val_rej_at_eff50': 7.15302, 'val_rej_at_eff70': 3.55752, 'val_loss': 0.57897, 'best_so_far': False, 'sec': 14.2}
+{'epoch': 12, 'lr': 0.00016, 'train_loss': 0.5562, 'train_accuracy': 0.72056, 'val_auc': 0.769, 'val_accuracy': 0.707, 'val_rej_at_eff30': 16.42157, 'val_rej_at_eff50': 7.17004, 'val_rej_at_eff70': 3.48958, 'val_loss': 0.57718, 'best_so_far': False, 'sec': 14.2}
+{'epoch': 13, 'lr': 0.00013, 'train_loss': 0.55179, 'train_accuracy': 0.72406, 'val_auc': 0.76839, 'val_accuracy': 0.706, 'val_rej_at_eff30': 16.01594, 'val_rej_at_eff50': 6.9913, 'val_rej_at_eff70': 3.43003, 'val_loss': 0.57877, 'best_so_far': False, 'sec': 14.2}
+[qg_v2_2026-10-13_multiseed_resnet18_tagger_sr-pool2x2_seed43] test: {'auc': 0.7880572315670663, 'accuracy': 0.7035, 'rej_at_eff30': 20.844508880029, 'rej_at_eff50': 7.994161801501252, 'rej_at_eff70': 3.8111332007952288, 'auc_boot_err': 0.0066309656969527194, 'rej_at_eff50_boot_err': 0.585368215623235}
+-- train_taggers finished in 4 min

@@ -1,0 +1,62 @@
+{
+  "dataset": "calo",
+  "created": "2026-10-26 10:52:02",
+  "n": {
+    "train": 90000,
+    "val": 10000,
+    "test": 100000
+  },
+  "channels": [
+    "energy"
+  ],
+  "native_shape": [
+    45,
+    16,
+    9
+  ],
+  "hr_shape": [
+    48,
+    16,
+    9
+  ],
+  "pad": [
+    [
+      0,
+      3
+    ],
+    [
+      0,
+      0
+    ],
+    [
+      0,
+      0
+    ]
+  ],
+  "levels": {
+    "pool1x2x1": [
+      1,
+      2,
+      1
+    ],
+    "pool1x4x3": [
+      1,
+      4,
+      3
+    ],
+    "pool3x8x3": [
+      3,
+      8,
+      3
+    ]
+  },
+  "scales": [
+    71.41950225830078
+  ],
+  "source_files": [
+    "/pscratch/sd/e/ereinha/superres/raw/calo/dataset_2_1.hdf5",
+    "/pscratch/sd/e/ereinha/superres/raw/calo/dataset_2_2.hdf5"
+  ],
+  "energy_unit": "MeV",
+  "negative_fraction_clipped": 0.0
+}

@@ -1,0 +1,39 @@
+{
+  "run": "qg_v2_2026-10-13_multiseed_sr_pool8x8",
+  "saved": "2026-10-19 22:20:18",
+  "level": "pool8x8",
+  "n_events": 4000,
+  "lr_closure": {
+    "sr": {
+      "median_lr_closure": 0.5797749161720276,
+      "mean_lr_closure": 0.5749559998512268
+    },
+    "vqrec": {
+      "median_lr_closure": 0.470226526260376,
+      "mean_lr_closure": 0.46981632709503174
+    },
+    "sr-sample": {
+      "median_lr_closure": 0.5636852979660034,
+      "mean_lr_closure": 0.5601439476013184
+    },
+    "uniform": {
+      "median_lr_closure": 3.894644251545287e-08,
+      "mean_lr_closure": 3.974448148369447e-08
+    },
+    "srproj": {
+      "median_lr_closure": 3.2611318090403074e-08,
+      "mean_lr_closure": 3.3739830485046696e-08
+    }
+  },
+  "c2st": {
+    "sr": {
+      "auc": 1.0,
+      "accuracy": 0.9995,
+      "rej_at_eff30": 1000000.0,
+      "rej_at_eff50": 1000000.0,
+      "rej_at_eff70": 1000000.0,
+      "auc_boot_err": 4.154074181055225e-17,
+      "rej_at_eff50_boot_err": 0.0
+    }
+  }
+}

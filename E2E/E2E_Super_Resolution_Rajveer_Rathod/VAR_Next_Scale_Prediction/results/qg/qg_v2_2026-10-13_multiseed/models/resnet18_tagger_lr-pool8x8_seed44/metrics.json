@@ -1,0 +1,20 @@
+{
+  "run": "qg_v2_2026-10-13_multiseed_resnet18_tagger_lr-pool8x8_seed44",
+  "saved": "2026-10-20 15:22:19",
+  "kind": "lr:pool8x8",
+  "seed": 44,
+  "val_objective": 0.7806818920473012,
+  "n_train": 32000,
+  "n_val": 4000,
+  "n_test": 4000,
+  "same_events_all_inputs": true,
+  "test": {
+    "auc": 0.8012990372669329,
+    "accuracy": 0.72575,
+    "rej_at_eff30": 21.94870620563317,
+    "rej_at_eff50": 8.012539184952974,
+    "rej_at_eff70": 4.044303797468355,
+    "auc_boot_err": 0.006117371303968332,
+    "rej_at_eff50_boot_err": 0.602641528131292
+  }
+}

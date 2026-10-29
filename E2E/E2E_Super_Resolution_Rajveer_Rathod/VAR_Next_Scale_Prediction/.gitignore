@@ -14,7 +14,8 @@ venv/
 *.parquet
 *.db
 data/
-results/
+results/**/*.npz
+results/**/*.pt
 
 
 notebook/*.ipynb
