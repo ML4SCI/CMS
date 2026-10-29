@@ -1,247 +1,232 @@
-# Physics super-resolution with VAR-style next-scale prediction
+# VAR-SR: Next-Scale Prediction for Physics Super-Resolution of Calorimeter Data
 
-ML4Sci / CMS / E2E project: map coarse calorimeter data back to high resolution
-with a Visual AutoRegressive (VAR) transformer. The result is judged by physics
-observables and by downstream taggers, not by SSIM/PSNR.
+**GSoC 2026 · ML4Sci** — E2E Super-Resolution
 
-| Dataset | Content | HR grid | LR levels (sum-pooled) |
+**Contributor:** Rajveer Rathod ([@rajveer43](https://github.com/rajveer43))
+**Project:** End-to-end super-resolution of CMS calorimeter data, judged by physics observables and downstream taggers
+**Method:** [Visual Autoregressive Modeling: Scalable Image Generation via Next-Scale Prediction](https://arxiv.org/abs/2404.02905) (Tian et al., 2024), adapted from natural images to calorimeter jets and showers
+**Compute:** NERSC Perlmutter (A100-40GB), SLURM array jobs
+**Sibling work:** the multiscale GAN super-resolution in [`../multiscale_sr/`](../multiscale_sr/) is the other approach to the same task
+
+> **Status:** Two complete multi-seed experiments: quark/gluon jets (`qg`, 3 LR levels, 3 tagger seeds) and CaloChallenge showers (`calo`, 3 LR levels, 3 regressor seeds). The pipeline runs end to end: download, tokenizer, transformer, generation, evaluation, taggers, summary. **The headline result is mixed and reported as such below:** the VAR output recovers many distributions at the finest level and in `calo`, but it does not yet beat the plain low-resolution input as a tagger input, and a classifier tells it apart from truth almost perfectly.
+
+---
+
+## Overview
+
+Detectors with larger cells record less information. The question here is whether a generative model can map coarse calorimeter data back to the native high-resolution grid well enough that **physics observables and analyses** (not SSIM or PSNR) still work on the output.
+
+Two datasets share one code path (2-D for jets, 3-D for showers):
+
+| Dataset | Content | HR grid (native) | LR levels (sum-pooled) |
 |---|---|---|---|
-| `qg` | CMS quark/gluon jet images, channels tracks / ECAL / HCAL | 3 x 125 x 125 (padded to 128) | `pool2x2` (64²), `pool4x4` (32²), `pool8x8` (16²) |
-| `calo` | CaloChallenge 2022 Dataset 2, e⁻ showers 1 GeV–1 TeV | 45 layers x 16 angle x 9 radius (padded to 48 layers) | `pool1x2x1`, `pool1x4x3`, `pool3x8x3` |
+| `qg` | CMS quark/gluon jet images, channels tracks / ECAL / HCAL, 40k jets | 3 x 125 x 125 (padded to 128) | `pool2x2` (64²), `pool4x4` (32²), `pool8x8` (16²) |
+| `calo` | CaloChallenge 2022 Dataset 2, e⁻ showers, 1 GeV–1 TeV | 45 layers x 16 angle x 9 radius (padded to 48 layers) | `pool1x2x1`, `pool1x4x3`, `pool3x8x3` |
 
-Level names give the pooling factor per axis. `pool3x8x3` merges 3 layers x 8 angular x 3 radial cells into one.
+Level names give the pooling factor per axis. Each LR cell is the **sum** of the HR cells it covers, as a detector with larger cells would record, so total energy is conserved exactly.
 
-**Why only up to the native resolution:** there is no ground truth above
-125 x 125 (qg) or 45 x 16 x 9 (calo). Output beyond those grids could not be
-checked against anything, so the SR target is always the native HR grid, which
-means 2x, 4x and 8x upscaling for jets.
+**Why only up to native resolution:** there is no ground truth above 125 x 125 (qg) or 45 x 16 x 9 (calo). Anything beyond could not be checked, so the SR target is always the native HR grid: 2x, 4x and 8x for jets.
 
-## Method
+## What is adapted from the VAR paper, and what is new
 
-1. **Energy-preserving down-sampling.** Each LR cell is the *sum* of the HR cells
-   it covers, which is what a detector with larger cells would record. Total
-   energy is exactly conserved.
-2. **Multi-scale residual VQ-VAE** (VAR paper, Algorithms 1 and 2). It works on
-   `log1p(E / s_c)` images and encodes each HR image into K token maps
-   (qg: 1² … 32², one token per 4×4 pixels; calo: 1x1x1 … 12x4x9). The codebook
-   is shared across scales. LPIPS and GAN losses are replaced by physics terms:
-   - the decoder has two heads per channel: **hit or not** (cross-entropy against
-     E > readout threshold) and **log-energy if hit** (MSE on hit cells only).
-     Cells without a predicted hit are exactly zero, as after detector zero
-     suppression, so the output has no diffuse background;
-   - a **per-channel energy loss**, so energy cannot move from one sub-detector
-     to another (e.g. tracks into ECAL);
-   - the decoder also sees the **LR image** (trained with every LR level in
-     turn), so layout that the measurement already fixes does not have to pass
-     through the tokens.
-3. **Conditional VAR transformer.** Next-scale prediction with a block-causal
-   mask, AdaLN and L2-normalised q/k, as in the paper. The class-label start
-   token is replaced by the LR measurement. An LR encoder provides the start
-   token and the AdaLN condition, and adds a spatial feature map to every
-   scale's tokens. One model is trained per LR level.
-4. **What is compared.** The result is the model output exactly as generated
-   (`sr`), set against the HR truth and the LR input. The training target is
-   always the HR truth: the tokenizer learns to rebuild HR images, and the
-   transformer learns to predict the tokens of the HR image from the LR image.
-5. **Downstream taggers.** One CNN architecture is tuned once on HR, then
-   trained separately on HR, each LR grid and each SR output.
-   - qg: quark vs gluon classification
-   - calo: incident-energy regression
-6. **Diagnostics**, kept out of the main figures and tables:
-   - `vqrec`: HR → tokens → HR by the tokenizer alone (decoded with the same
-     LR image). This is the best any token-predicting model could do with this
-     tokenizer.
-   - `sr-sample`: tokens drawn from the predicted distribution (temperature
-     0.8, top-k 50). The main result `sr` uses the most likely token (greedy).
-   - `uniform`: each coarse cell's energy spread evenly over its fine cells, a
-     no-learning reference.
-   - `srproj`: SR rescaled so every coarse cell matches its measured energy.
-     It is post-processing and never part of training.
+VAR replaces raster-order token prediction with **coarse-to-fine, next-scale** prediction: an image becomes K token maps of growing size, and a transformer predicts each whole map conditioned on the coarser ones. That is a natural fit for super-resolution, because the LR measurement *is* a coarse scale.
 
-The 2-D (jets) and 3-D (showers) models share code. The calorimeter angular axis
-uses periodic padding.
+Carried over from the paper:
+- the multi-scale residual VQ-VAE (Algorithms 1 and 2) with a codebook shared across scales
+- next-scale prediction with a block-causal mask, AdaLN, and L2-normalised q/k
 
-## Metrics (chosen to be read directly by physicists)
+Original to this project:
+1. **Physics losses replace LPIPS and GAN losses.** The decoder has two heads per channel: *hit or not* (cross-entropy against E > readout threshold) and *log-energy if hit* (MSE on hit cells only). Cells without a predicted hit are exactly zero, as after detector zero suppression, so there is no diffuse background. A **per-channel energy loss** stops energy moving between sub-detectors (for example tracks into ECAL).
+2. **LR image into the decoder.** Layout the measurement already fixes does not have to pass through the tokens. The tokenizer is trained with every LR level in turn.
+3. **LR measurement replaces the class-label start token.** An LR encoder supplies the start token and the AdaLN condition, and adds a spatial feature map to every scale's tokens. One transformer per LR level.
+4. **Energy-preserving down-sampling** and **periodic padding on the calorimeter angular axis**.
+5. **Evaluation by physics.** Observable distributions, per-event bias and resolution, LR closure, a classifier two-sample test, and downstream taggers trained on HR, LR and SR.
 
-| Question | Metric |
-|---|---|
-| Does SR recover the right physics distributions? | W1 distance / σ_HR, KS statistic, mean shift, for each observable |
-| Is each event reconstructed correctly? | Per-event bias (median) and resolution (IQR/1.349) of SR vs true observable |
-| Is SR consistent with what was measured? | LR closure: Σ\|pool(SR) − LR\| / Σ LR |
-| Can a network tell SR from truth? | Classifier two-sample test AUC (0.5 = indistinguishable) |
-| Does SR help an analysis? (qg) | Tagger ROC AUC and background rejection 1/ε_B at ε_S = 30/50/70%, bootstrap errors |
-| Does SR help an analysis? (calo) | Energy response bias and resolution σ_eff/E, overall and per energy bin |
+## What is compared
 
-Observables used:
-- Jets: per-channel and total energy, jet pT, jet mass, girth, p_TD, τ₂₁ (N-subjettiness), hit multiplicity, radial pT profile.
-- Showers: E_dep/E_inc, shower depth centroid and width, radial centroid and width, lateral x/y centroid, energy fractions in early/mid/late layers, hit count, longitudinal and radial profiles, cell-energy spectrum.
+The result (`sr`) is the model output exactly as generated (greedy decoding), set against the HR truth and the LR input. The training target is always HR. Diagnostics are kept out of the main tables:
 
-## Running on Colab
+| Name | What it is | Why it is there |
+|---|---|---|
+| `vqrec` | HR → tokens → HR, tokenizer only | Best any token-predicting model could do with this tokenizer |
+| `sr-sample` | Tokens sampled from the predicted distribution (T = 0.8, top-k 50) | Greedy vs sampled |
+| `uniform` | Each coarse cell's energy spread evenly over its fine cells | A no-learning reference |
+| `srproj` | SR rescaled so every coarse cell matches its measured energy | Post-processing, never used in training |
 
-### Get the code into Colab
+## Headline results (multi-seed)
 
-Open the notebook straight from GitHub:
-[colab.research.google.com/github/rajveer43/physics-superres-var/blob/main/notebooks/superres_colab.ipynb](https://colab.research.google.com/github/rajveer43/physics-superres-var/blob/main/notebooks/superres_colab.ipynb)
+All numbers are test-set values from the saved summaries in [`results/`](results/). Tagger seeds are 42, 43, 44. "±" is the spread over seeds.
 
-Its first code cell clones this repository into `/content/superres_code`. Each
-later run of that cell pulls the latest commit, so to change code you push to
-GitHub and re-run the cell. The runtime doesn't need restarting.
+### Quark/gluon jets: ResNet-18 tagger ROC AUC (trained and tested on each input)
 
-### Run it
+| Input | 2x (pool2x2) | 4x (pool4x4) | 8x (pool8x8) |
+|---|---|---|---|
+| **HR** (truth) | 0.8086 ± 0.0020 | 0.8086 ± 0.0020 | 0.8086 ± 0.0020 |
+| **LR** (coarse input) | 0.8075 ± 0.0019 | 0.8036 ± 0.0024 | 0.8033 ± 0.0024 |
+| **SR** (VAR output) | 0.7871 ± 0.0022 | 0.7887 ± 0.0003 | 0.7771 ± 0.0018 |
 
-1. Set the runtime to GPU.
-2. Keep `SMOKE = True` and run all cells. This is a quick pass on a tiny subset
-   with 1–2 epochs, and it writes to `MyDrive/GSoC_SuperRes/smoke_tests/`.
-   `FAKE_DATA = True` does the same on synthetic data, with no download.
-3. Set `SMOKE = False` and run all cells again for the real results.
-4. Change `DATASET` to `'calo'` or `'qg'` and repeat. Run one dataset per
-   runtime, and delete the other dataset's cache first if disk is short.
+The tagger loses very little from coarse-graining alone (LR is within 0.005 of HR even at 8x), and **the SR output is below LR at every level**. Background rejection at 50% signal efficiency shows the same ordering (HR 9.47, LR 8.59–9.71, SR 7.17–7.84).
 
-Command-line alternative (for example on a cluster):
+### CaloChallenge showers: CNN energy-resolution regressor (lower is better)
+
+| Input | pool1x2x1 | pool1x4x3 | pool3x8x3 |
+|---|---|---|---|
+| **HR** (truth) | 0.0712 ± 0.0005 | 0.0712 ± 0.0005 | 0.0712 ± 0.0005 |
+| **LR** | 0.0735 ± 0.0006 | 0.0754 ± 0.0001 | 0.0801 ± 0.0022 |
+| **SR** | 0.0726 ± 0.0003 | 0.0775 ± 0.0005 | 0.0882 ± 0.0017 |
+
+SR matches or marginally beats LR only at the finest level; at the two coarser levels it is worse.
+
+### Do the generated distributions look like truth? (W1 / σ_HR, 0 = identical)
+
+| Observable | qg 2x | qg 4x | qg 8x |
+|---|---|---|---|
+| hit multiplicity | 0.37 | 0.45 | 0.86 |
+| girth | 0.40 | 0.11 | 0.70 |
+| τ₂₁ | 0.06 | 0.08 | 0.30 |
+| jet mass | 1.07 | 1.36 | 1.92 |
+| jet pT | 1.12 | 1.28 | 1.47 |
+| total energy | 1.14 | 1.32 | 1.54 |
+
+| Observable | calo pool1x2x1 | calo pool1x4x3 | calo pool3x8x3 |
+|---|---|---|---|
+| E_dep / E_inc | 0.09 | 0.24 | 0.42 |
+| depth centroid | 0.03 | 0.14 | 0.24 |
+| depth width | 0.04 | 0.55 | 0.84 |
+| radial centroid | 0.14 | 0.73 | 1.11 |
+| radial width | 0.06 | 0.92 | 1.54 |
+
+In `calo` at the finest level the distributions are close (all W1/σ ≤ 0.14, event-by-event Pearson r ≥ 0.96). Quality falls steadily as the grid gets coarser.
+
+## What the diagnostics say about the failures
+
+Reported as measured, not smoothed over:
+
+- **Energy is under-reconstructed in the tracks channel.** In `qg` at 2x, mean jet pT is 145 for SR against 234 for HR, and mean `sum_tracks` is 36 against 123. Jet mass and total energy move with it (W1/σ above 1).
+- **The SR output does not respect what was measured.** Median LR closure (Σ|pool(SR) − LR| / Σ LR) is 0.48 / 0.51 / 0.58 for `qg` and 0.14 / 0.15 / 0.11 for `calo`. The `srproj` diagnostic brings closure to about 1e-8, as designed.
+- **The bottleneck is the tokenizer, not the transformer.** The tokenizer-only diagnostic (`vqrec`) already has closure 0.45–0.47 in `qg`, nearly equal to SR. The transformer adds little loss on top of what the tokens cannot represent.
+- **Energy projection is not a free fix.** `SR + energy constraint` recovers the HR-trained tagger at 2x (0.8057 vs 0.7834 without), but at 8x it falls to 0.6272 (SR alone 0.7627), because redistributing energy on a poorly placed layout hurts the shape.
+- **A classifier can tell SR from truth almost perfectly.** C2ST AUC is 0.9987 / 0.9992 / 1.0000 (`qg`) and about 0.9999 at all `calo` levels (0.5 = indistinguishable). Agreement in means and 1-D distributions does not imply the events look real.
+- **Transformer fit worsens with coarseness.** Best validation cross-entropy: `qg` 0.94 (2x) → 1.56 (8x); `calo` 3.46 (pool1x2x1) → 4.57 (pool3x8x3).
+
+## Open threads
+
+Directions suggested by the diagnostics above, in priority order:
+
+1. **Fix the tokenizer bottleneck first** (more or larger scales, larger codebook, a tracks-specific term). `vqrec` bounds what the transformer can reach.
+2. **Build LR consistency into generation** rather than as post-processing, so closure is satisfied by construction without the shape damage that `srproj` causes at 8x.
+3. **Tracks channel:** its hit count and energy are the largest deficits. A dedicated head or a sparse-aware loss is the obvious next step.
+4. **Close the AUC gap to LR** by training the tagger on SR (or jointly) once 1–3 improve; today SR < LR means the SR output is *removing* information the tagger could use.
+5. **`calo` at coarse levels:** radial and depth widths are the weak observables (W1/σ near or above 1).
+
+## Reported honestly, not oversold
+
+- SR is **worse than the unprocessed LR input** as a tagger input in `qg` at every level, and in `calo` at the two coarser levels. The model does not yet help an analysis; it is a measured baseline.
+- Seed spread is small relative to the level-to-level and SR-vs-LR gaps in `qg`. In `calo` the SR-vs-LR difference at pool1x2x1 (0.0726 vs 0.0735) is within the seed spread and should not be read as a win.
+- Evaluation uses 4,000 events (`qg`) and 10,000 events (`calo`) for observables and C2ST (the `eval.max_events` setting in `superres/config.py`).
+- One tokenizer and one transformer per level were trained once (the three seeds are tagger seeds, not generator seeds), so generator-to-generator variance is not measured.
+- Hyper-parameters were tuned with Optuna on small subsets and short trials (4 epochs, 10k samples); the final runs use the tuned values but were not re-tuned per level.
+
+## Repository structure
+
+```
+VAR_Next_Scale_Prediction/
+├── README.md
+├── README_PERLMUTTER.md             # run the full pipeline on NERSC Perlmutter
+├── requirements.txt
+├── docs/
+│   └── PIPELINE.md                  # stages, Colab usage, result layout, disk and time budget
+├── superres/
+│   ├── config.py                    # all settings, per-dataset defaults, smoke-test overrides
+│   ├── data.py  download.py         # CERNBox (qg) and Zenodo (calo) loaders, sum-pooling, splits
+│   ├── physics_ops.py               # energy-preserving pooling, hit/energy transforms
+│   ├── models/
+│   │   ├── vqvae.py                 # multi-scale residual VQ-VAE with hit/energy heads
+│   │   ├── var.py                   # conditional next-scale transformer (AdaLN, block-causal)
+│   │   ├── tagger.py                # ResNet-18 / CNN taggers and the calo regressor
+│   │   └── nn_utils.py
+│   ├── train.py  tuning.py          # training loops, Optuna studies
+│   ├── pipeline.py                  # stage runner: python -m superres.pipeline
+│   ├── evaluate.py  observables.py  # physics observables, W1/KS, bias/resolution, C2ST, closure
+│   ├── metrics.py  io_utils.py
+├── tests/
+│   ├── smoke_test.py                # synthetic end-to-end run, no download
+│   └── test_observables.py
+├── slurm/                           # Perlmutter sbatch scripts, one per stage; settings.sh
+└── results/
+    ├── qg/
+    │   ├── combined/                # per-level figures side by side, evaluation_all.pdf
+    │   └── qg_v2_2026-10-13_multiseed/
+    └── calo/
+        ├── combined/
+        └── calo_v2_2026-10-23_multiseed/
+            ├── summary/             # report.md, tables (CSV), figures
+            ├── models/              # config, history, metrics, training curves (no weights)
+            ├── evaluation/          # per-level metrics and observables
+            └── run_info.json  data_meta.json  README_layout.md
+```
+
+## Setup
 
 ```bash
+git clone https://github.com/ML4SCI/CMS.git
+cd CMS/E2E/E2E_Super_Resolution_Rajveer_Rathod/VAR_Next_Scale_Prediction
+python3 -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
-python -m superres.pipeline --dataset calo --stages all --set paths.drive_root=/path/experiments run_date=2026-10-06 run_tag=multiseed
+```
+
+On NERSC Perlmutter, edit `slurm/settings.sh` and follow [`README_PERLMUTTER.md`](README_PERLMUTTER.md).
+
+## Dataset
+
+| Dataset | Source | Notes |
+|---|---|---|
+| `qg` | CMS quark/gluon jet images, CERNBox share (WebDAV) | tracks / ECAL / HCAL, 125 x 125, 40k jets used |
+| `calo` | CaloChallenge 2022 Dataset 2, Zenodo [10.5281/zenodo.6366271](https://doi.org/10.5281/zenodo.6366271) | e⁻ showers, 45 x 16 x 9, md5-checked download |
+
+Preprocessing: pad to 128 (qg) or 48 layers (calo), clip negatives, sum-pool to every LR level, split into train / val / test, per-channel energy scale. The tokenizer works on `log1p(E / s_c)` images.
+
+**Settings (all experiments):** codebook 1024 shared across scales, VQ-VAE 30 epochs, VAR transformer depth 6 / width 384 / 6 heads for 40 epochs, taggers 20 epochs with seeds 42/43/44, mixed precision on A100.
+
+## Usage
+
+Quick synthetic check (no data, no GPU needed):
+```bash
+python tests/smoke_test.py --root /tmp/superres_smoke
+```
+
+Run the whole pipeline for one dataset:
+```bash
+python -m superres.pipeline --dataset qg --stages all \
+  --set paths.drive_root=/path/experiments run_date=2026-10-13 run_tag=multiseed
+```
+
+Run selected stages and levels:
+```bash
 python -m superres.pipeline --dataset qg --stages train_var,generate --levels pool8x8 --set var.epochs=20
-python tests/smoke_test.py --root /tmp/superres_smoke      # synthetic end-to-end check
 ```
 
-### Stages
-
-| Stage | What it does | Output |
-|---|---|---|
-| `download` | Zenodo (calo, md5-checked) or CERNBox share over WebDAV (qg); resumable `wget -c` | `/content/data/raw/<ds>/` |
-| `prepare` | Pad, clip negatives, sum-pool to every LR level, split into train/val/test, per-channel energy scale | `/content/data/cache/<ds>/*.npy`, `data_meta.json` on Drive |
-| `tune_vqvae` | Optuna: lr, codebook size, latent channels, β, energy weight, width | `tuning/<name>_vqvae_tokenizer*` |
-| `train_vqvae` | Full VQ-VAE training with the tuned parameters; logs hit precision / recall / count ratio | `models/vqvae_tokenizer/` |
-| `tune_var` | Optuna on the hardest level: depth (width = 64·depth), lr, dropout, weight decay, label smoothing | `tuning/<name>_var_transformer_all*` |
-| `train_var` | One conditional VAR per LR level | `models/var_transformer_<level>/` |
-| `generate` | VAR output as generated: `var.decode` (greedy) for the splits in `var.gen_splits`, other decodings in `var.decodes` for test only | `<cache>/<ds>/<split>_<name>_sr-<decode>_<level>.npy` |
-| `eval_sr` | HR vs LR vs SR: observables, W1/KS, per-event bias and resolution, LR closure, C2ST, plots incl. per-channel events; diagnostics in `figures/diagnostics/` | `evaluation/sr_<level>/` |
-| `tune_tagger` | Optuna on HR: lr, dropout, weight decay, width | `tuning/<name>_<tagger>_hr*` |
-| `train_taggers` | Tagger/regressor for `hr`, then `lr` and `sr` at every level, for each seed | `models/<tagger>_<input>_seed<seed>/`, `<tagger>` = `resnet18_tagger` (qg default) or `cnn_tagger` (`tagger.arch=cnn`); calo: `cnn_regressor` |
-| `summarize` | Tables, plots and a markdown report across all runs | `summary/` |
-
-Every training stage resumes from `last.pt` on Drive. Optuna studies resume from
-their database copy on Drive. After a disconnect, re-run the notebook from the top.
-
-### Result layout and naming
-
-```
-<drive_root>/                         Colab: MyDrive/GSoC_SuperRes/experiments, Perlmutter: $SCRATCH/superres/experiments
-  <dataset>/<date>_<version>_<tag>/   one experiment, e.g. qg/2026-10-06_v2_multiseed/
-      README_layout.md
-      run_info.json                   start time; per session: commit, GPU / job id, full config
-      data_meta.json                  shapes, splits, energy scales, label counts
-      models/
-          vqvae_tokenizer/            multi-scale VQ-VAE
-          var_transformer_<level>/    conditional VAR, one per LR level
-          resnet18_tagger_<input>_seed<seed>/ qg quark/gluon tagger (cnn_tagger_... with tagger.arch=cnn; calo: cnn_regressor_...)
-              config.json  history.csv  metrics.json  best.pt  last.pt (resume point)
-              test_predictions.npz                    taggers only
-              figures/<name>_<model>_training-curves.png|pdf   updated each epoch
-      evaluation/
-          sr_<level>/                 observables.csv, paired.csv, metrics.json,
-              figures/  figures/diagnostics/          histograms, scatter plots, profiles,
-                                                      example events, per-channel events (png + pdf)
-      tuning/<name>_<model>.db | _trials.csv | _best.json          Optuna studies
-      summary/
-          <name>_report.md            all tables in one page
-          <name>_<tagger>-runs.csv    one row per tagger run, <tagger> = resnet18-tagger | cnn-tagger | cnn-regressor
-          <name>_<tagger>-summary.csv mean and std over seeds
-          <name>_<tagger>-2x3_<level>.csv   tagger trained on HR vs trained on each input
-          <name>_sr-observables.csv   all observable comparisons
-          <name>_paired.csv           event-by-event bias / resolution / correlation
-          <name>_values_<level>.csv   mean of each quantity: HR | LR | SR | diagnostics
-          <name>_sr-w1-table.csv      observable x (level, method) W1 table
-          <name>_c2st-closure.csv     two-sample-test AUC and LR closure
-          figures/                    tagger curves, 2x3 table, AUC vs level, W1 heatmaps
+Submit on Perlmutter (see [`README_PERLMUTTER.md`](README_PERLMUTTER.md) and `slurm/`):
+```bash
+bash slurm/submit_all.sh
 ```
 
-- `<name>` = `<dataset>_<version>_<date>_<tag>`, e.g. `qg_v2_2026-10-06_multiseed`, starts every
-  file name, so a figure copied elsewhere still says which experiment it is from. `_` separates
-  fields and `-` joins words inside a field.
-- `version` comes from `config.py` (`"version": "v2"`): change it for a new model design.
-- `run_date` (start date) and `run_tag` (what the experiment tests, e.g. `multiseed`) name the
-  experiment. Reuse both to resume or re-evaluate; a new date or tag starts from scratch and has its
-  own Optuna studies. SR outputs in the shared local cache carry `<name>` too.
-- `<input>` is `hr`, `lr-<level>`, `sr-<level>`, `uniform-<level>` or `srproj-<level>`.
-- The Colab notebook pulls branch `v2-eval-tagger-checks`, which still uses the previous naming
-  (`<dataset>/<version>/<date>-<tag>/runs/...`).
-- Names contain no timestamps, so later stages can find earlier outputs. The
-  creation time is stored in `config.json` instead.
+Stages: `download`, `prepare`, `tune_vqvae`, `train_vqvae`, `tune_var`, `train_var`, `generate`, `eval_sr`, `tune_tagger`, `train_taggers`, `summarize`. Training stages resume from `last.pt`. The full stage table, result layout and naming rules are in [`docs/PIPELINE.md`](docs/PIPELINE.md).
 
-### Disk budget (local Colab disk; the free tier has about 100 GB)
+## Reproducing the tables above
 
-Worked out from array sizes with the default settings:
+The numbers come from the saved summaries:
 
-| | qg (40k jets) | calo (100k + 100k showers) |
-|---|---|---|
-| raw download | size of the CERNBox share (not checked) | 2.8 GB |
-| HR cache (float32) | 7.9 GB | 5.5 GB |
-| LR caches | 2.6 GB | 3.3 GB |
-| SR caches, 3 levels | 11.8 GB (float16) | 16.6 GB (float32) |
-| **total** | **about 22 GB + raw** | **about 28 GB** |
+- `results/qg/qg_v2_2026-10-13_multiseed/summary/qg_v2_2026-10-13_multiseed_report.md`
+- `results/calo/calo_v2_2026-10-23_multiseed/summary/calo_v2_2026-10-23_multiseed_report.md`
+- C2ST and closure: `…_c2st-closure.csv` in the same folders
+- Side-by-side figures: `results/<dataset>/combined/`
 
-Lower `data.max_samples` (qg) or `data.max_samples` / `data.test_max` (calo) if
-disk or RAM is tight. Drive only receives checkpoints, metrics and figures, a
-few hundred MB per dataset.
+## Acknowledgments
 
-### Time budget
+This work is part of Google Summer of Code 2026 under **ML4Sci** (Machine Learning for Science), with experiments run on NERSC's Perlmutter supercomputer. The method follows Tian et al., *Visual Autoregressive Modeling: Scalable Image Generation via Next-Scale Prediction*.
 
-Not measured yet. Run the smoke pass first; the epoch times it prints in
-`history.csv` let you scale the full settings. As a rough guide on a T4:
+## Contact
 
-- VAR training is the dominant cost: one model per level, about 650–700 tokens
-  per image.
-- For a first full pass, `var.epochs` of 15–20 and `optuna.var_trials` of about
-  5 should fit in a Colab session.
-- Stages are independent, so they can run across several sessions.
-- On an A100 or L4 the code uses bf16 automatically.
-
-## Running on Perlmutter (NERSC)
-
-`slurm/` runs the same stages as a chain of single-GPU Slurm jobs (levels, tagger inputs and seeds in
-parallel), configured by one file, `slurm/settings.sh`. Step-by-step instructions: [README_PERLMUTTER.md](README_PERLMUTTER.md).
-
-## Assumptions to check on the first real run
-
-- **CERNBox access.** The public-share WebDAV endpoint was not tested (no network
-  access while writing this). If `download` fails, put direct links in
-  `data.extra_urls` or copy the files into `/content/data/raw/qg/`.
-- **Jet file format.** The loader auto-detects `.pt` contents (a dict, tuple or
-  TensorDataset; channels first or last), as well as parquet, h5 and npz. Check
-  the label counts printed by `prepare`. Class `data.signal_label` (default 1)
-  is the signal for 1/ε_B.
-- **Jet geometry.** `data.pixel_size = 0.0174` (the ECAL crystal size in η–φ)
-  sets the coordinates for jet mass, pT and τ₂₁. Comparisons between HR and SR
-  do not depend on it.
-- **Calo geometry.** The radial bin edges in `config.CALO_R_EDGES` are the
-  Dataset 2 values from `binning_dataset_2.xml`. Voxels are ordered
-  (layer, angle, radius), as in the CaloChallenge code.
-- **Testing so far.** The pipeline has not been run end to end yet. Run
-  `tests/smoke_test.py` or the notebook with `FAKE_DATA = True` before the long runs.
-
-## Code map
-
-```
-superres/
-  config.py        defaults for both datasets, SMOKE settings, dotted overrides
-  download.py      Zenodo + CERNBox downloaders
-  data.py          raw readers, cache writer, CacheStore, torch Datasets
-  physics_ops.py   sum_pool, uniform_upsample, project_to_lr
-  models/          nn_utils (2-D/3-D periodic conv), vqvae, var, tagger
-  train.py         VQ-VAE / VAR / tagger training, SR generation
-  observables.py   jet and shower observables
-  metrics.py       AUC, 1/eps_B, response and resolution, W1/KS
-  evaluate.py      per-level SR evaluation, C2ST, plots, summaries
-  tuning.py        Optuna studies synced to Drive
-  pipeline.py      stage runner (CLI + notebook)
-notebooks/superres_colab.ipynb
-tests/smoke_test.py
-```
-
-## References
-
-- K. Tian et al., *Visual Autoregressive Modeling: Scalable Image Generation via Next-Scale Prediction*, arXiv:2404.02905.
-- Fast Calorimeter Simulation Challenge 2022, Dataset 2, Zenodo record 6366271.
+**Rajveer Rathod** — [GitHub](https://github.com/rajveer43) · [LinkedIn](https://www.linkedin.com/in/rajveer-rathod/)
