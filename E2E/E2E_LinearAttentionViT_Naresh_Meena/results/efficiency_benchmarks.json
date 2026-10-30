@@ -1,0 +1,42 @@
+{
+  "xcit_mae_finetuned": {
+    "params": 26.07,
+    "backbone_p": 25.87,
+    "gflops": 1.58,
+    "latency_ms": 6.29,
+    "throughput": 10170.0,
+    "memory_mb": 1493.0
+  },
+  "xcit_scratch": {
+    "params": 26.07,
+    "backbone_p": 25.87,
+    "gflops": 1.58,
+    "latency_ms": 6.3,
+    "throughput": 10161.0,
+    "memory_mb": 1493.0
+  },
+  "xcit_imagenet": {
+    "params": 26.07,
+    "backbone_p": 25.87,
+    "gflops": 1.58,
+    "latency_ms": 6.32,
+    "throughput": 10128.0,
+    "memory_mb": 1493.0
+  },
+  "l2vit_mae_finetuned": {
+    "params": 29.28,
+    "backbone_p": 28.89,
+    "gflops": 1.97,
+    "latency_ms": 7.34,
+    "throughput": 8723.0,
+    "memory_mb": 1623.0
+  },
+  "swin_scratch": {
+    "params": 27.92,
+    "backbone_p": 27.52,
+    "gflops": 2.06,
+    "latency_ms": 6.4,
+    "throughput": 9997.0,
+    "memory_mb": 1688.0
+  }
+}

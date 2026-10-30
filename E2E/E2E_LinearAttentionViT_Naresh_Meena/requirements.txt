@@ -1,0 +1,15 @@
+torch>=2.0.0
+torchvision>=0.15.0
+timm>=0.9.0
+h5py>=3.8.0
+numpy>=1.24.0
+scikit-learn>=1.2.0
+matplotlib>=3.7.0
+scipy>=1.10.0
+
+# notebooks
+jupyter>=1.0.0
+ipykernel>=6.0.0
+
+# analysis notebook only
+fvcore>=0.1.5
